@@ -1,0 +1,213 @@
+<div class="page-wrap">
+  @if (backendOffline()) {
+    <app-not-found
+      mode="offline"
+      detail="http://localhost:6969/api/admin/policy"
+      (retry)="loadPolicies()" />
+  } @else {
+  <header class="page-header">
+    <div>
+      <h1 class="page-title">Travel Policies</h1>
+      <p class="page-subtitle">Define and manage travel and expense policies for the organization.</p>
+    </div>
+    <div class="page-actions">
+      <button type="button" class="btn btn-primary btn-sm" (click)="openModal()">
+        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true">
+          <line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/>
+        </svg>
+        New Policy
+      </button>
+    </div>
+  </header>
+
+  <section class="summary-strip cols-3" aria-label="Policy summary">
+    <div class="summary-cell">
+      <span class="summary-label">Configured Rules</span>
+      <span class="summary-val num mono">{{ localPolicies.length }}</span>
+    </div>
+    <div class="summary-cell">
+      <span class="summary-label">Active Enforcement</span>
+      <span class="summary-val num mono">{{ activePolicyCount() }}</span>
+    </div>
+    <div class="summary-cell">
+      <span class="summary-label">Policy Categories</span>
+      <span class="summary-val num mono">{{ policyTypes.length }}</span>
+    </div>
+  </section>
+
+  <section class="policy-matrix" style="margin-bottom:24px" aria-label="Policy rule categories">
+    @for (type of policyTypes; track type) {
+      <div class="policy-matrix-cell">
+        <div class="policy-type-badge"
+             [style.background]="policyTypeBg(type)"
+             [style.color]="policyTypeColor(type)"
+             [style.border-color]="policyTypeBorder(type)">
+          {{ type.replace("_", " ") }}
+        </div>
+        <p class="policy-type-desc">{{ policyTypeDesc[type] }}</p>
+      </div>
+    }
+  </section>
+
+  @if (loadingPolicies()) {
+    <div class="card" style="margin-bottom:24px;padding:36px;text-align:center;color:var(--text-secondary)">
+      <div class="spinner" style="margin:0 auto 12px;width:24px;height:24px"></div>
+      <p style="font-size:13.5px">Loading organization policies...</p>
+    </div>
+  }
+
+  @if (localPolicies.length > 0) {
+    <div class="card" style="margin-bottom:24px">
+      <div class="card-header">
+        <div>
+          <h2 class="card-title">All Travel Policies</h2>
+          <p class="card-subtitle">Active threshold rules applied during travel request and claim evaluation</p>
+        </div>
+      </div>
+      <div class="table-wrap" style="border:none;border-radius:0;box-shadow:none">
+        <table>
+          <thead>
+            <tr>
+              <th>Policy Name</th>
+              <th>Type</th>
+              <th style="text-align:right">Threshold</th>
+              <th>Comment</th>
+              <th style="text-align:right">Actions</th>
+            </tr>
+          </thead>
+          <tbody>
+            @for (p of localPolicies; track p.id ?? p.name) {
+              <tr>
+                <td><strong>{{ p.name }}</strong></td>
+                <td>
+                  <span class="badge"
+                        [style.background]="policyTypeBg(p.type)"
+                        [style.color]="policyTypeColor(p.type)"
+                        [style.border-color]="policyTypeBorder(p.type)">
+                    {{ p.type }}
+                  </span>
+                </td>
+                <td class="num" style="text-align:right"><strong>{{ formatValue(p) }}</strong></td>
+                <td style="color:var(--text-secondary)">{{ p.comment || "—" }}</td>
+                <td style="text-align:right">
+                  <button type="button" class="btn btn-ghost btn-sm" (click)="openEditModal(p)">
+                    <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true">
+                      <path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/>
+                    </svg>
+                    Edit
+                  </button>
+                </td>
+              </tr>
+            }
+          </tbody>
+        </table>
+      </div>
+    </div>
+  }
+
+  @if (!loadingPolicies() && !showModal && apiError()) {
+    <div class="alert alert-danger row-between" style="margin-bottom:24px">
+      <span>{{ apiError() }}</span>
+      <button type="button" class="btn btn-secondary btn-sm" (click)="loadPolicies()">Retry</button>
+    </div>
+  }
+
+  @if (!loadingPolicies() && !apiError() && localPolicies.length === 0) {
+    <div class="card">
+      <div class="empty-state">
+        <div class="empty-policy-icon">
+          <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="var(--success)" stroke-width="2">
+            <path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/>
+          </svg>
+        </div>
+        <h3>No policies yet</h3>
+        <p>Create your first travel policy to enforce budget and compliance rules.</p>
+        <button type="button" class="btn btn-primary btn-sm" style="margin-top:6px" (click)="openModal()">Create Policy</button>
+      </div>
+    </div>
+  }
+  }
+</div>
+
+@if (showModal) {
+  <div class="modal-backdrop" (click)="closeModal()">
+    <div class="modal" (click)="$event.stopPropagation()">
+      <div class="modal-header">
+        <h3 class="modal-title">
+          {{ isEditMode() ? 'Update Travel Policy' : 'New Travel Policy' }}
+          @if (loadingPolicyDetails()) {
+            <span style="font-size:12px;font-weight:400;color:var(--text-muted);margin-left:8px">(Loading details...)</span>
+          }
+        </h3>
+        <button type="button" class="btn btn-ghost btn-icon" (click)="closeModal()" aria-label="Close modal">
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/>
+          </svg>
+        </button>
+      </div>
+      <form [formGroup]="form" (ngSubmit)="submit()" novalidate>
+        <div class="modal-body flex-col gap-4">
+          @if (apiError()) {
+            <div class="alert alert-warning" style="font-size:13px">
+              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="flex-shrink:0;margin-top:2px">
+                <circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/>
+              </svg>
+              <span>{{ apiError() }}</span>
+            </div>
+          }
+
+          <div class="form-group">
+            <label class="form-label" for="policyNameInput">Policy Name <span class="req">*</span></label>
+            <input id="policyNameInput" type="text" class="form-control" [class.invalid]="hasError('name')" formControlName="name" placeholder="e.g. Economy Flight Limit" maxlength="100"/>
+            @if (hasError('name', 'required')) { <span class="form-error">Policy name is required</span> }
+          </div>
+
+          <div class="form-group">
+            <label class="form-label" for="policyTypeSelect">Policy Type <span class="req">*</span></label>
+            <select id="policyTypeSelect" class="form-control" formControlName="type">
+              @for (t of policyTypes; track t) { <option [value]="t">{{ t.replace("_", " ") }}</option> }
+            </select>
+            <span class="form-hint">{{ getSelectedTypeDesc() }}</span>
+          </div>
+
+          <div class="form-group">
+            <label class="form-label" for="policyValueInput">Value / Threshold <span class="req">*</span></label>
+            <input id="policyValueInput" type="number" class="form-control num" [class.invalid]="hasError('value')" formControlName="value" min="0" placeholder="e.g. 15000"/>
+            @if (hasError('value', 'required')) { <span class="form-error">Value is required</span> }
+            @if (hasError('value', 'min')) { <span class="form-error">Value must be positive</span> }
+          </div>
+
+          @if (isEditMode()) {
+            <div class="form-row">
+              <div class="form-group">
+                <label class="form-label" for="policyClassInput">Travel Class</label>
+                <input id="policyClassInput" type="text" class="form-control" formControlName="travelClass" placeholder="e.g. Economy, Business" maxlength="50"/>
+              </div>
+              <div class="form-group">
+                <label class="form-label" for="policyStayInput">Stay Limit (Days)</label>
+                <input id="policyStayInput" type="number" class="form-control num" formControlName="stay" min="0" placeholder="e.g. 5"/>
+              </div>
+            </div>
+
+            <div class="flex items-center gap-2">
+              <input type="checkbox" id="policyActive" formControlName="active" style="width:16px;height:16px;cursor:pointer;accent-color:var(--accent)"/>
+              <label for="policyActive" class="form-label" style="margin-bottom:0;cursor:pointer">Active Policy</label>
+            </div>
+          }
+
+          <div class="form-group">
+            <label class="form-label" for="policyCommentInput">Comment</label>
+            <textarea id="policyCommentInput" class="form-control" formControlName="comment" rows="2" maxlength="500" placeholder="Optional description..."></textarea>
+          </div>
+        </div>
+        <div class="modal-footer">
+          <button type="button" class="btn btn-secondary btn-sm" (click)="closeModal()">Cancel</button>
+          <button type="submit" class="btn btn-primary btn-sm" [disabled]="submitting || loadingPolicyDetails()">
+            @if (submitting) { <span class="spinner" style="border-top-color:currentColor"></span> }
+            {{ isEditMode() ? 'Update Policy' : 'Create Policy' }}
+          </button>
+        </div>
+      </form>
+    </div>
+  </div>
+}

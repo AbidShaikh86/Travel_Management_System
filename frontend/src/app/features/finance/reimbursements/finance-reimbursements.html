@@ -1,0 +1,361 @@
+<div class="page-wrap" #reimburseRoot>
+  @if (backendOffline()) {
+    <app-not-found
+      mode="offline"
+      detail="http://localhost:6969/api/finance/reimbursement"
+      (retry)="loadReimbursements()" />
+  } @else {
+  <header class="page-header">
+    <div>
+      <h1 class="page-title">Reimbursement Audit &amp; Disbursement</h1>
+      <p class="page-subtitle">Inspect receipt proofs, verify expense totals, and authorize employee payouts inline.</p>
+    </div>
+  </header>
+
+  <section class="summary-strip" aria-label="Reimbursement audit summary">
+    <div class="summary-cell">
+      <span class="summary-label">Total Claims</span>
+      <span class="summary-val num mono">{{ itemsSignal().length }}</span>
+    </div>
+    <div class="summary-cell">
+      <span class="summary-label">Pending Audit</span>
+      <span class="summary-val num mono">{{ pendingCount() }}</span>
+    </div>
+    <div class="summary-cell">
+      <span class="summary-label">Ready for Payout</span>
+      <span class="summary-val num mono">{{ formatCurrency(approvedTotal()) }}</span>
+    </div>
+    <div class="summary-cell">
+      <span class="summary-label">Disbursed</span>
+      <span class="summary-val num mono">{{ formatCurrency(paidTotal()) }}</span>
+    </div>
+  </section>
+
+  <div class="controls-bar">
+    <div class="tab-bar" role="tablist" aria-label="Claim audit views">
+      <div class="tab-indicator" #tabIndicator aria-hidden="true"></div>
+      @for (tab of tabs; track tab.id; let i = $index) {
+        <button
+          #tabBtn
+          type="button"
+          role="tab"
+          class="tab-btn"
+          [class.active]="activeTab() === tab.id"
+          [attr.aria-selected]="activeTab() === tab.id"
+          (click)="setActiveTab(tab.id)"
+          (keydown)="onTabKeydown($event, i)">
+          <span>{{ tab.label }}</span>
+          @if (tabCount(tab.id) > 0 || tab.id === 'ALL') {
+            <span class="tab-count num" [class.warn]="tab.id === 'PENDING' && pendingCount() > 0">
+              {{ tabCount(tab.id) }}
+            </span>
+          }
+        </button>
+      }
+    </div>
+
+    <div class="search-field">
+      <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true">
+        <circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/>
+      </svg>
+      <input
+        type="text"
+        class="search-input"
+        aria-label="Search reimbursement claims"
+        placeholder="Search employee, claim #, or trip #..."
+        [value]="searchQuery()"
+        (input)="searchQuery.set($any($event.target).value)" />
+    </div>
+  </div>
+
+  @if (loading()) {
+    <div class="card" aria-busy="true" aria-label="Loading reimbursement claims">
+      @for (i of [1, 2, 3, 4]; track i) {
+        <div class="skeleton-row">
+          <div class="skeleton-block" style="width:36%;height:15px"></div>
+          <div class="skeleton-block" style="width:58%;height:12px;margin-top:8px"></div>
+        </div>
+      }
+    </div>
+  } @else if (error()) {
+    <div class="alert alert-danger row-between">
+      <span>{{ error() }}</span>
+      <button type="button" class="btn btn-secondary btn-sm" (click)="loadReimbursements()">Retry</button>
+    </div>
+  } @else {
+    <div class="workbench-split" [class.inspector-open]="!!selectedClaim()">
+      <div class="workbench-queue">
+        @if (filteredItems().length === 0) {
+          <div class="card" #panelRef role="tabpanel">
+            <div class="empty-state">
+              <svg class="empty-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" aria-hidden="true">
+                <path d="M14 2H6a2 2 0 00-2 2v16a2 2 0 002 2h12a2 2 0 002-2V8z"/><polyline points="14,2 14,8 20,8"/>
+              </svg>
+              <h3>No claims match</h3>
+              <p>No reimbursement claims found under the current status tab or search term.</p>
+              @if (activeTab() !== 'ALL' || searchQuery()) {
+                <button type="button" class="btn btn-secondary btn-sm" (click)="resetFilters()">Reset Filters</button>
+              }
+            </div>
+          </div>
+        } @else {
+          <div class="table-wrap" #panelRef role="tabpanel">
+            <table>
+              <thead>
+                <tr>
+                  <th>Claim</th>
+                  <th>Employee</th>
+                  <th>Trip</th>
+                  <th style="text-align:right">Total Claim</th>
+                  <th>Receipts</th>
+                  <th>Status</th>
+                  <th>Submitted</th>
+                  <th style="text-align:right">Actions</th>
+                </tr>
+              </thead>
+              <tbody>
+                @for (r of filteredItems(); track r.id) {
+                  <tr [class.row-selected]="selectedClaim()?.id === r.id">
+                    <td class="mono" style="color:var(--text-muted);font-weight:600">#{{ r.id }}</td>
+                    <td>
+                      <div class="flex items-center gap-3">
+                        <div class="user-avatar" style="width:30px;height:30px;font-size:12px" aria-hidden="true">
+                          {{ (r.employeeName || 'E').slice(0, 1).toUpperCase() }}
+                        </div>
+                        <div>
+                          <div class="cell-primary">{{ r.employeeName || 'Employee' }}</div>
+                          <div class="cell-secondary">{{ r.employeeEmail }}</div>
+                        </div>
+                      </div>
+                    </td>
+                    <td class="mono" style="color:var(--text-secondary)">
+                      @if (r.travelDetailId) { #{{ r.travelDetailId }} } @else { — }
+                    </td>
+                    <td class="num mono" style="text-align:right"><strong>{{ formatCurrency(r.totalAmount) }}</strong></td>
+                    <td><span class="pill num">{{ r.expenses?.length ?? 0 }} {{ (r.expenses?.length ?? 0) === 1 ? 'item' : 'items' }}</span></td>
+                    <td><span [class]="statusClass(r.status)"><span class="badge-dot"></span>{{ r.status }}</span></td>
+                    <td class="num" style="color:var(--text-secondary)">{{ formatDate(r.createdAt) }}</td>
+                    <td style="text-align:right">
+                      <div class="flex justify-end gap-2">
+                        <button type="button" class="btn btn-secondary btn-sm" (click)="open(r)">
+                          {{ r.status === 'PENDING' ? 'Audit Claim' : 'Inspect' }}
+                        </button>
+                        @if (r.status === 'APPROVED') {
+                          <button
+                            type="button"
+                            class="btn btn-primary btn-sm"
+                            [disabled]="payingClaimId() === r.id"
+                            (click)="markPaid(r)">
+                            @if (payingClaimId() === r.id) {
+                              <span class="spinner" style="width:13px;height:13px;border-top-color:currentColor"></span>
+                            }
+                            Disburse
+                          </button>
+                        }
+                      </div>
+                    </td>
+                  </tr>
+                }
+              </tbody>
+            </table>
+          </div>
+        }
+      </div>
+
+      @if (selectedClaim(); as claim) {
+        <div class="inspector-backdrop" (click)="close()" aria-hidden="true"></div>
+        <aside
+          class="inspector-pane audit-modal"
+          role="dialog"
+          aria-modal="false"
+          aria-labelledby="audit-modal-title">
+          <div class="inspector-header">
+            <div>
+              <div class="inspector-title-row">
+                <h2 id="audit-modal-title" class="inspector-title">{{ claim.employeeName }}</h2>
+                <span class="inspector-id-chip">Claim #{{ claim.id }}</span>
+              </div>
+              <p class="cell-secondary" style="margin-top:3px">{{ claim.employeeEmail }} &middot; Submitted {{ formatDate(claim.createdAt) }}</p>
+            </div>
+            <button type="button" class="btn btn-ghost btn-icon" (click)="close()" aria-label="Close claim inspector">
+              <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true">
+                <line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/>
+              </svg>
+            </button>
+          </div>
+
+          <div class="inspector-body">
+            @if (detailLoading()) {
+              <div class="alert alert-info row-between" style="font-size:13px">
+                <span>Refreshing itemized receipts from server...</span>
+              </div>
+            } @else if (detailError()) {
+              <div class="alert alert-danger row-between" style="font-size:13px">
+                <span>{{ detailError() }}</span>
+                <button type="button" class="btn btn-secondary btn-sm" (click)="fetchClaimDetail(claim.id)">Retry</button>
+              </div>
+            }
+
+            <div class="detail-grid">
+              <div class="detail-block">
+                <span class="detail-block-label">Total Claimed</span>
+                <span class="detail-block-value num mono" style="color:var(--accent)">{{ formatCurrency(claim.totalAmount) }}</span>
+              </div>
+              <div class="detail-block">
+                <span class="detail-block-label">Claim Status</span>
+                <span><span [class]="statusClass(claim.status)"><span class="badge-dot"></span>{{ claim.status }}</span></span>
+              </div>
+              <div class="detail-block">
+                <span class="detail-block-label">Associated Trip</span>
+                <span class="detail-block-value mono" style="font-size:13.5px">
+                  @if (claim.travelDetailId) { Travel #{{ claim.travelDetailId }} } @else { Not linked }
+                </span>
+              </div>
+              <div class="detail-block">
+                <span class="detail-block-label">Processed On</span>
+                <span class="detail-block-value num" style="font-size:13.5px">{{ formatDate(claim.processedAt) }}</span>
+              </div>
+            </div>
+
+            @if (claim.comment) {
+              <div class="alert alert-info" style="font-size:13px">
+                <span><strong>Claimant Note:</strong> {{ claim.comment }}</span>
+              </div>
+            }
+
+            <div>
+              <div class="receipt-section-title">Itemized Receipts ({{ claim.expenses?.length ?? 0 }})</div>
+              @if (!claim.expenses?.length) {
+                <div class="detail-block">
+                  <span class="cell-secondary">No expense line items attached to this claim.</span>
+                </div>
+              } @else {
+                <div class="table-wrap" style="box-shadow:none">
+                  <table>
+                    <thead>
+                      <tr>
+                        <th>Category</th>
+                        <th style="text-align:right">Amount</th>
+                        <th>Proof</th>
+                        <th>Date</th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      @for (e of claim.expenses; track e.id) {
+                        <tr>
+                          <td><span class="pill">{{ e.category }}</span></td>
+                          <td class="num mono" style="text-align:right"><strong>{{ formatCurrency(e.amount) }}</strong></td>
+                          <td>
+                            @if (e.proofFileName) {
+                              <div class="flex items-center gap-2">
+                                <button
+                                  type="button"
+                                  class="btn btn-ghost btn-sm"
+                                  style="color:var(--accent);font-size:12px;padding:4px 8px"
+                                  (click)="inspectProof(claim.id, e)">
+                                  {{ previewExpense()?.id === e.id ? 'Hide' : 'Preview' }}
+                                </button>
+                                <button
+                                  type="button"
+                                  class="btn btn-ghost btn-sm"
+                                  style="font-size:12px;padding:4px 8px"
+                                  (click)="openProofInNewTab(claim.id, e)"
+                                  [title]="proofDisplayName(e.displayFileName || e.proofFileName)">
+                                  Open
+                                </button>
+                              </div>
+                            } @else {
+                              <span class="cell-secondary">Missing proof</span>
+                            }
+                          </td>
+                          <td class="num cell-secondary">{{ formatDate(e.createdAt) }}</td>
+                        </tr>
+                      }
+                    </tbody>
+                  </table>
+                </div>
+              }
+            </div>
+
+            @if (previewExpense(); as activeProof) {
+              <div class="proof-viewer">
+                <div class="proof-viewer-bar">
+                  <span class="cell-primary" style="font-size:12.5px">
+                    {{ activeProof.category }} &middot; {{ formatCurrency(activeProof.amount) }}
+                  </span>
+                  <div class="flex items-center gap-2">
+                    <button type="button" class="btn btn-ghost btn-sm" (click)="openProofInNewTab(claim.id, activeProof)">
+                      Open in Tab
+                    </button>
+                    <button type="button" class="btn btn-ghost btn-sm" (click)="clearPreview()">Close Preview</button>
+                  </div>
+                </div>
+
+                @if (previewLoading()) {
+                  <div class="loading-wrap" style="padding:28px" aria-busy="true">
+                    <div class="spinner"></div>
+                  </div>
+                } @else if (previewError()) {
+                  <div class="alert alert-danger" style="margin:12px;font-size:13px">{{ previewError() }}</div>
+                } @else if (previewSafeUrl(); as safeUrl) {
+                  @if (previewKind() === 'image') {
+                    <div class="proof-image-stage">
+                      <img [src]="safeUrl" [alt]="activeProof.category + ' receipt proof'" class="proof-image" />
+                    </div>
+                  } @else if (previewKind() === 'pdf') {
+                    <iframe [src]="safeUrl" title="Receipt PDF preview" class="proof-pdf"></iframe>
+                  } @else {
+                    <div class="card-body">
+                      <p class="cell-secondary">Preview not supported for this file format. Use "Open in Tab" to download or view.</p>
+                    </div>
+                  }
+                }
+              </div>
+            }
+          </div>
+
+          <div class="inspector-footer">
+            <button type="button" class="btn btn-secondary btn-sm" (click)="close()">Close</button>
+
+            @if (claim.status === 'PENDING') {
+              <button
+                type="button"
+                class="btn btn-danger btn-sm"
+                [disabled]="submittingDecision() !== null"
+                (click)="submitDecision('REJECTED')">
+                @if (submittingDecision() === 'REJECTED') {
+                  <span class="spinner" style="width:13px;height:13px;border-top-color:currentColor"></span>
+                }
+                Reject Claim
+              </button>
+              <button
+                type="button"
+                class="btn btn-primary btn-sm"
+                [disabled]="submittingDecision() !== null"
+                (click)="submitDecision('APPROVED')">
+                @if (submittingDecision() === 'APPROVED') {
+                  <span class="spinner" style="width:13px;height:13px;border-top-color:currentColor"></span>
+                }
+                Approve Claim
+              </button>
+            }
+
+            @if (claim.status === 'APPROVED') {
+              <button
+                type="button"
+                class="btn btn-success btn-sm"
+                [disabled]="payingClaimId() === claim.id"
+                (click)="markPaid(claim, true)">
+                @if (payingClaimId() === claim.id) {
+                  <span class="spinner" style="width:13px;height:13px;border-top-color:currentColor"></span>
+                }
+                Confirm Payout (Mark as Paid)
+              </button>
+            }
+          </div>
+        </aside>
+      }
+    </div>
+  }
+  }
+</div>

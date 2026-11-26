@@ -1,0 +1,358 @@
+<div class="page-wrap" #budgetRoot>
+  @if (backendOffline()) {
+    <app-not-found
+      mode="offline"
+      detail="http://localhost:6969/api/finance/request/all"
+      (retry)="loadTravelRequests()" />
+  } @else {
+  <header class="page-header">
+    <div>
+      <h1 class="page-title">Travel Budget Allocation</h1>
+      <p class="page-subtitle">Inspect employee travel requests, review manager sign-offs and policy flags, and authorize trip budgets.</p>
+    </div>
+  </header>
+
+  <section class="summary-strip" aria-label="Travel budget summary">
+    <div class="summary-cell">
+      <span class="summary-label">Total Requests</span>
+      <span class="summary-val num mono">{{ requestsSignal().length }}</span>
+    </div>
+    <div class="summary-cell">
+      <span class="summary-label">Ready for Finance</span>
+      <span class="summary-val num mono">{{ readyForBudgetCount() }}</span>
+    </div>
+    <div class="summary-cell">
+      <span class="summary-label">Policy Flagged</span>
+      <span class="summary-val num mono">{{ flaggedCount() }}</span>
+    </div>
+    <div class="summary-cell">
+      <span class="summary-label">Estimated Volume</span>
+      <span class="summary-val num mono">{{ formatCurrency(totalEstimatedBudget()) }}</span>
+    </div>
+  </section>
+
+  <div class="controls-bar">
+    <div class="tab-bar" role="tablist" aria-label="Travel budget status views">
+      <div class="tab-indicator" #tabIndicator aria-hidden="true"></div>
+      @for (tab of tabs; track tab.id; let i = $index) {
+        <button
+          #tabBtn
+          type="button"
+          role="tab"
+          class="tab-btn"
+          [class.active]="activeTab() === tab.id"
+          [attr.aria-selected]="activeTab() === tab.id"
+          (click)="setActiveTab(tab.id)"
+          (keydown)="onTabKeydown($event, i)">
+          <span>{{ tab.label }}</span>
+          @if (tabCount(tab.id) > 0 || tab.id === 'ALL') {
+            <span class="tab-count num" [class.warn]="tab.id === 'FLAGGED' && flaggedCount() > 0">
+              {{ tabCount(tab.id) }}
+            </span>
+          }
+        </button>
+      }
+    </div>
+
+    <div class="search-field">
+      <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true">
+        <circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/>
+      </svg>
+      <input
+        type="text"
+        class="search-input"
+        aria-label="Search travel requests"
+        placeholder="Search city, purpose, or trip #..."
+        [value]="searchQuery()"
+        (input)="searchQuery.set($any($event.target).value)" />
+    </div>
+  </div>
+
+  @if (loading()) {
+    <div class="card" aria-busy="true" aria-label="Loading travel budget queue">
+      @for (i of [1, 2, 3, 4]; track i) {
+        <div class="skeleton-row">
+          <div class="skeleton-block" style="width:36%;height:15px"></div>
+          <div class="skeleton-block" style="width:58%;height:12px;margin-top:8px"></div>
+        </div>
+      }
+    </div>
+  } @else if (error()) {
+    <div class="alert alert-danger row-between">
+      <span>{{ error() }}</span>
+      <button type="button" class="btn btn-secondary btn-sm" (click)="loadTravelRequests()">Retry</button>
+    </div>
+  } @else {
+    <div class="workbench-split" [class.inspector-open]="!!selected()">
+      <div class="workbench-queue">
+        @if (filteredRequests().length === 0) {
+          <div class="card" #panelRef role="tabpanel">
+            <div class="empty-state">
+              <svg class="empty-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" aria-hidden="true">
+                <line x1="12" y1="1" x2="12" y2="23"/><path d="M17 5H9.5a3.5 3.5 0 000 7h5a3.5 3.5 0 010 7H6"/>
+              </svg>
+              <h3>No matching travel requests</h3>
+              <p>No travel requests match the selected tab and search filter.</p>
+              @if (activeTab() !== 'ALL' || searchQuery()) {
+                <button type="button" class="btn btn-secondary btn-sm" (click)="resetFilters()">Reset Filters</button>
+              }
+            </div>
+          </div>
+        } @else {
+          <div class="table-wrap" #panelRef role="tabpanel">
+            <table>
+              <thead>
+                <tr>
+                  <th>Trip</th>
+                  <th>Destination</th>
+                  <th>Mode</th>
+                  <th>Departure</th>
+                  <th>Stay</th>
+                  <th>Manager</th>
+                  <th style="text-align:right">Budget</th>
+                  <th>Status</th>
+                  <th style="text-align:right">Actions</th>
+                </tr>
+              </thead>
+              <tbody>
+                @for (r of filteredRequests(); track r.id) {
+                  <tr [class.row-selected]="selected()?.id === r.id">
+                    <td>
+                      <div class="trip-id-cell">
+                        <span class="mono" style="color:var(--text-muted);font-weight:600">#{{ r.id }}</span>
+                        @if (r.isFlagged) {
+                          <span class="flag-badge">Flagged</span>
+                        }
+                      </div>
+                    </td>
+                    <td>
+                      <div class="cell-primary">{{ r.destination }}</div>
+                      <div class="cell-secondary purpose-clamp" [title]="r.purpose">{{ r.purpose }}</div>
+                    </td>
+                    <td><span class="pill">{{ travelClassLabel(r.travelClass) }}</span></td>
+                    <td class="num" style="color:var(--text-secondary)">{{ formatDate(r.travelStartDate) }}</td>
+                    <td class="num" style="color:var(--text-secondary)">{{ r.stay }} {{ r.stay === 1 ? 'day' : 'days' }}</td>
+                    <td>
+                      <span [class]="statusClass(r.managerApproval || 'PENDING')">
+                        <span class="badge-dot"></span>{{ r.managerApproval || 'PENDING' }}
+                      </span>
+                    </td>
+                    <td class="num mono" style="text-align:right"><strong>{{ formatCurrency(r.estimatedBudget) }}</strong></td>
+                    <td>
+                      <span [class]="statusClass(r.status)">
+                        <span class="badge-dot"></span>{{ r.status }}
+                      </span>
+                    </td>
+                    <td style="text-align:right">
+                      <div class="row-actions-cell">
+                        <button type="button" class="btn btn-secondary btn-sm" (click)="open(r, false)">
+                          Inspect
+                        </button>
+                        @if (canModifyBudget(r)) {
+                          <button type="button" class="btn btn-primary btn-sm" (click)="open(r, true)">
+                            Set Budget
+                          </button>
+                        }
+                      </div>
+                    </td>
+                  </tr>
+                }
+              </tbody>
+            </table>
+          </div>
+        }
+      </div>
+
+      @if (selected(); as trip) {
+        <div class="inspector-backdrop" (click)="close()" aria-hidden="true"></div>
+        <aside
+          class="inspector-pane budget-modal"
+          role="dialog"
+          aria-modal="false"
+          aria-labelledby="budget-modal-title">
+          <div class="inspector-header">
+            <div class="inspector-title-row">
+              <h2 id="budget-modal-title" class="inspector-title">{{ trip.destination }}</h2>
+              <span class="inspector-id-chip">#{{ trip.id }}</span>
+              @if (selectedDetail()?.isFlagged ?? trip.isFlagged) {
+                <span class="flag-badge">Policy Flagged</span>
+              }
+            </div>
+            <button type="button" class="btn btn-ghost btn-icon" (click)="close()" aria-label="Close budget inspector">
+              <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true">
+                <line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/>
+              </svg>
+            </button>
+          </div>
+
+          <form [formGroup]="form" (ngSubmit)="save()" novalidate style="display:flex;flex-direction:column;flex:1;min-height:0">
+            <div class="inspector-body">
+              @if (detailLoading()) {
+                <div class="detail-loading-box" aria-busy="true" aria-label="Loading travel request details">
+                  <div class="spinner"></div>
+                  <span class="cell-secondary">Loading traveler profile, manager approval, and policy checks...</span>
+                </div>
+              } @else if (detailError()) {
+                <div class="alert alert-danger row-between">
+                  <span>{{ detailError() }}</span>
+                  <button type="button" class="btn btn-secondary btn-sm" (click)="fetchTravelDetail(trip.id)">Retry</button>
+                </div>
+              } @else if (selectedDetail(); as detail) {
+                <div class="detail-block traveler-banner">
+                  <span class="user-avatar" aria-hidden="true">
+                    {{ (detail.employeeName || 'E').slice(0, 1).toUpperCase() }}
+                  </span>
+                  <div style="flex:1;min-width:0">
+                    <div class="cell-primary">{{ detail.employeeName || 'Employee' }}</div>
+                    <div class="cell-secondary">
+                      {{ detail.employeeDesignation || 'Staff' }}
+                      @if (detail.departmentName && detail.departmentName !== 'Not assigned') {
+                        <span> &middot; {{ detail.departmentName }}</span>
+                      }
+                      @if (detail.employeeEmail) {
+                        <span> &middot; {{ detail.employeeEmail }}</span>
+                      }
+                    </div>
+                  </div>
+                  <span [class]="statusClass(detail.status || trip.status)">
+                    <span class="badge-dot"></span>{{ detail.status || trip.status }}
+                  </span>
+                </div>
+
+                <div class="detail-grid">
+                  <div class="detail-block">
+                    <span class="detail-block-label">Departure Date</span>
+                    <span class="detail-block-value num">{{ formatDate(detail.travelStartDate) }}</span>
+                  </div>
+                  <div class="detail-block">
+                    <span class="detail-block-label">Stay Duration</span>
+                    <span class="detail-block-value num">{{ detail.stay }} {{ detail.stay === 1 ? 'day' : 'days' }}</span>
+                  </div>
+                  <div class="detail-block">
+                    <span class="detail-block-label">Estimated Budget</span>
+                    <span class="detail-block-value num mono" style="color:var(--accent)">{{ formatCurrency(detail.estimatedBudget) }}</span>
+                  </div>
+                  <div class="detail-block">
+                    <span class="detail-block-label">Travel Class</span>
+                    <span class="detail-block-value">{{ travelClassLabel(detail.travelClass) }}</span>
+                  </div>
+                  <div class="detail-block">
+                    <span class="detail-block-label">Submitted On</span>
+                    <span class="detail-block-value num">{{ formatDateTime(detail.createdAt) }}</span>
+                  </div>
+                  <div class="detail-block">
+                    <span class="detail-block-label">Manager Approval</span>
+                    <span>
+                      <span [class]="statusClass(detail.approvalStatus || trip.managerApproval || 'PENDING')">
+                        <span class="badge-dot"></span>{{ detail.approvalStatus || trip.managerApproval || 'PENDING' }}
+                      </span>
+                    </span>
+                  </div>
+                </div>
+
+                <div class="flex-col gap-2">
+                  <span class="detail-block-label">Business Purpose</span>
+                  <p class="cell-secondary" style="font-size:13.5px;line-height:1.5;color:var(--text-primary)">{{ detail.purpose }}</p>
+                </div>
+
+                @if (detail.isFlagged) {
+                  <div class="alert alert-warning" style="font-size:13px">
+                    <div class="flex-col gap-2" style="width:100%">
+                      <strong>Policy Violations ({{ detail.flaggedPolicies?.length ?? 0 }})</strong>
+                      @if (detail.flaggedPolicies?.length) {
+                        @for (fp of detail.flaggedPolicies; track fp.id; let first = $first) {
+                          <div [style.padding-top]="first ? '2px' : '6px'" [style.border-top]="first ? 'none' : '1px solid var(--warning-border)'">
+                            <strong>{{ fp.policyName }}</strong>
+                            <span class="cell-secondary"> ({{ fp.policyType }})</span>
+                            @if (fp.justification) {
+                              <div style="margin-top:2px;color:var(--text-primary)">{{ fp.justification }}</div>
+                            }
+                          </div>
+                        }
+                      } @else {
+                        <span>This request exceeded a travel policy threshold.</span>
+                      }
+                    </div>
+                  </div>
+                }
+
+                @if (detail.approvalComment || detail.actionDate) {
+                  <div class="detail-block">
+                    <span class="detail-block-label">Manager Decision Note</span>
+                    <span class="cell-primary" style="font-weight:500">{{ detail.approvalComment || 'No comment recorded.' }}</span>
+                    @if (detail.actionDate) {
+                      <span class="cell-secondary num">Actioned {{ formatDateTime(detail.actionDate) }}</span>
+                    }
+                  </div>
+                }
+              }
+
+              @if (!canModifyBudget(trip)) {
+                <div class="alert alert-info" style="font-size:13px">
+                  @if (trip.status === 'COMPLETED' || trip.status === 'CANCELLED') {
+                    <span>This travel request is <strong>{{ trip.status }}</strong> and can no longer be modified by Finance.</span>
+                  } @else {
+                    <span>Manager approval is required before Finance can authorize or update this trip's budget.</span>
+                  }
+                </div>
+              } @else if (budgetEditorOpen()) {
+                <div class="budget-editor-panel">
+                  <div class="budget-editor-header">
+                    <span class="detail-block-label">Finance Budget Authorization</span>
+                  </div>
+                  <div class="form-row">
+                    <div class="form-group">
+                      <label class="form-label" for="authorizedBudgetInput">Authorized Finance Budget (&#8377;) <span class="req">*</span></label>
+                      <input
+                        id="authorizedBudgetInput"
+                        type="number"
+                        class="form-control num"
+                        [class.invalid]="form.get('budget')!.invalid && form.get('budget')!.touched"
+                        formControlName="budget"
+                        min="0"
+                        placeholder="e.g. 10000" />
+                      @if (form.get('budget')!.invalid && form.get('budget')!.touched) {
+                        <span class="form-error">Please specify an approved budget amount</span>
+                      }
+                    </div>
+
+                    <div class="form-group">
+                      <label class="form-label" for="budgetStatusSelect">Update Status <span class="req">*</span></label>
+                      <select id="budgetStatusSelect" class="form-control" formControlName="status">
+                        @for (s of statuses; track s) {
+                          <option [value]="s">{{ s }}</option>
+                        }
+                      </select>
+                    </div>
+                  </div>
+                </div>
+              }
+            </div>
+
+            <div class="inspector-footer">
+              <button type="button" class="btn btn-secondary btn-sm" (click)="close()">
+                {{ budgetEditorOpen() ? 'Cancel' : 'Close' }}
+              </button>
+
+              @if (canModifyBudget(trip) && !budgetEditorOpen()) {
+                <button type="button" class="btn btn-primary btn-sm" (click)="enableBudgetEditor()">
+                  Set Budget
+                </button>
+              }
+
+              @if (canModifyBudget(trip) && budgetEditorOpen()) {
+                <button type="submit" class="btn btn-primary btn-sm" [disabled]="submitting()">
+                  @if (submitting()) {
+                    <span class="spinner" style="width:13px;height:13px;border-top-color:currentColor"></span>
+                  }
+                  Confirm Budget
+                </button>
+              }
+            </div>
+          </form>
+        </aside>
+      }
+    </div>
+  }
+  }
+</div>

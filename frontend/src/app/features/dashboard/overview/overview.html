@@ -1,0 +1,684 @@
+<div class="overview-wrap page-wrap" #overviewRoot>
+  @if (loading()) {
+    <div aria-busy="true" aria-label="Loading dashboard overview">
+      <div class="page-header">
+        <div>
+          <div class="skeleton-block" style="width:240px;height:28px"></div>
+          <div class="skeleton-block" style="width:320px;height:14px;margin-top:8px"></div>
+        </div>
+        <div class="page-actions">
+          <div class="skeleton-block" style="width:120px;height:34px"></div>
+          <div class="skeleton-block" style="width:110px;height:34px"></div>
+        </div>
+      </div>
+      <div class="telemetry-band" style="margin-bottom:24px">
+        @for (i of [1, 2, 3]; track i) {
+          <div class="kpi-card" style="min-height:96px">
+            <div class="skeleton-block" style="width:45%;height:11px"></div>
+            <div class="skeleton-block" style="width:55%;height:28px;margin-top:10px"></div>
+            <div class="skeleton-block" style="width:70%;height:12px;margin-top:8px"></div>
+          </div>
+        }
+      </div>
+      <div class="overview-split">
+        <div class="card skeleton-panel"></div>
+        <div class="card skeleton-panel"></div>
+      </div>
+    </div>
+  } @else if (backendOffline()) {
+    <app-not-found
+      mode="offline"
+      detail="http://localhost:6969/api"
+      (retry)="loadDashboardData()" />
+  } @else if (isManager()) {
+    <header class="page-header">
+      <div>
+        <h1 class="page-title">Welcome back, {{ displayName() }}</h1>
+        <p class="page-subtitle">Team travel approvals and assignments at a glance.</p>
+      </div>
+      <div class="page-actions">
+        <a routerLink="/dashboard/manager/request-travel" class="btn btn-secondary btn-sm">Assign Travel</a>
+        <a routerLink="/dashboard/approvals" class="btn btn-primary btn-sm">Approvals Queue</a>
+      </div>
+    </header>
+
+    @if (roleLoadError()) {
+      <div class="alert alert-danger row-between" style="margin-bottom:20px">
+        <span>{{ roleLoadError() }}</span>
+        <button type="button" class="btn btn-secondary btn-sm" (click)="loadDashboardData()">Retry</button>
+      </div>
+    }
+
+    <section class="telemetry-band" style="margin-bottom:24px" aria-label="Manager metrics">
+      <div class="kpi-card">
+        <div class="kpi-label">Pending Approvals</div>
+        <div class="kpi-value num" [attr.data-count]="managerPendingCount()">{{ managerPendingCount() }}</div>
+        <div class="kpi-meta">Awaiting your review</div>
+      </div>
+      <div class="kpi-card">
+        <div class="kpi-label">Budget Under Review</div>
+        <div class="kpi-value num" [attr.data-currency]="managerPendingBudget()">{{ formatCurrency(managerPendingBudget()) }}</div>
+        <div class="kpi-meta">Across pending requests</div>
+      </div>
+      <div class="kpi-card">
+        <div class="kpi-label">Policy Notes</div>
+        <div class="kpi-value num" [attr.data-count]="managerFlaggedCount()">{{ managerFlaggedCount() }}</div>
+        <div class="kpi-meta">Requests with policy exceptions</div>
+      </div>
+    </section>
+
+    <div class="overview-split" #tabPanel>
+      <div class="card">
+        <div class="card-header">
+          <div>
+            <h2 class="card-title">Pending Team Requests</h2>
+            <p class="card-subtitle">Latest travel requests assigned to you</p>
+          </div>
+          <a routerLink="/dashboard/approvals" class="btn btn-ghost btn-sm">Review all &rarr;</a>
+        </div>
+        <div class="card-body" style="padding:6px 20px">
+          @if (managerPreviewItems().length === 0) {
+            <div class="empty-state" style="padding:36px 16px">
+              <h3>Queue is clear</h3>
+              <p>No pending team requests right now.</p>
+            </div>
+          } @else {
+            @for (item of managerPreviewItems(); track item.id) {
+              <div class="feed-row row-between">
+                <div>
+                  <div class="cell-primary">{{ item.travelDetail?.user?.name || item.employeeName || item.travelDetail?.destination || item.destination || 'Travel Request' }}</div>
+                  <div class="cell-secondary">{{ item.travelDetail?.destination || item.destination }} &middot; {{ item.travelDetail?.stay ?? item.stay }} days</div>
+                </div>
+                <span class="cell-primary num mono">{{ formatCurrency(item.travelDetail?.estimatedBudget ?? item.estimatedBudget ?? 0) }}</span>
+              </div>
+            }
+          }
+        </div>
+      </div>
+
+      <div class="card">
+        <div class="card-header">
+          <div>
+            <h2 class="card-title">Team Actions</h2>
+            <p class="card-subtitle">Common manager workflows</p>
+          </div>
+        </div>
+        <div class="card-body" style="padding:8px 20px">
+          <a routerLink="/dashboard/approvals" class="feed-row row-between action-link-row">
+            <div>
+              <div class="cell-primary">Review Approvals Queue</div>
+              <div class="cell-secondary">Approve or decline pending employee trips inline</div>
+            </div>
+            <span class="action-arrow" aria-hidden="true">&rarr;</span>
+          </a>
+          <a routerLink="/dashboard/manager/request-travel" class="feed-row row-between action-link-row">
+            <div>
+              <div class="cell-primary">Assign Employee Travel</div>
+              <div class="cell-secondary">Dispatch a pre-authorized trip for a team member</div>
+            </div>
+            <span class="action-arrow" aria-hidden="true">&rarr;</span>
+          </a>
+        </div>
+      </div>
+    </div>
+  } @else if (isFinance()) {
+    <header class="page-header">
+      <div>
+        <h1 class="page-title">Welcome back, {{ displayName() }}</h1>
+        <p class="page-subtitle">Travel budget authorizations, expense audits, and pending payouts.</p>
+      </div>
+      <div class="page-actions">
+        <a routerLink="/dashboard/finance/travel" class="btn btn-secondary btn-sm">Travel Budgets</a>
+        <a routerLink="/dashboard/finance/reimbursements" class="btn btn-primary btn-sm">Audit &amp; Claims</a>
+      </div>
+    </header>
+
+    @if (roleLoadError()) {
+      <div class="alert alert-danger row-between" style="margin-bottom:20px">
+        <span>{{ roleLoadError() }}</span>
+        <button type="button" class="btn btn-secondary btn-sm" (click)="loadDashboardData()">Retry</button>
+      </div>
+    }
+
+    <section class="telemetry-band" style="margin-bottom:24px" aria-label="Finance metrics">
+      <div class="kpi-card">
+        <div class="kpi-label">Travel Budget Queue</div>
+        <div class="kpi-value num" [attr.data-count]="financePendingTravelCount()">{{ financePendingTravelCount() }}</div>
+        <div class="kpi-meta">Trips requiring allocation review</div>
+      </div>
+      <div class="kpi-card">
+        <div class="kpi-label">Pending Audits</div>
+        <div class="kpi-value num" [attr.data-count]="financePendingClaimCount()">{{ financePendingClaimCount() }}</div>
+        <div class="kpi-meta">Claims awaiting verification</div>
+      </div>
+      <div class="kpi-card">
+        <div class="kpi-label">Ready for Disbursement</div>
+        <div class="kpi-value num" [attr.data-currency]="financeReadyPayoutTotal()">{{ formatCurrency(financeReadyPayoutTotal()) }}</div>
+        <div class="kpi-meta">Approved reimbursement payouts</div>
+      </div>
+    </section>
+
+    <div class="overview-split" #tabPanel>
+      <div class="card">
+        <div class="card-header">
+          <div>
+            <h2 class="card-title">Travel Budget Allocation</h2>
+            <p class="card-subtitle">Manager-approved trips awaiting finance sign-off</p>
+          </div>
+          <a routerLink="/dashboard/finance/travel" class="btn btn-ghost btn-sm">Open queue &rarr;</a>
+        </div>
+        <div class="card-body" style="padding:6px 20px">
+          @if (financeTravelPreview().length === 0) {
+            <div class="empty-state" style="padding:36px 16px">
+              <h3>No pending allocations</h3>
+              <p>All manager-approved trips currently have budgets set.</p>
+            </div>
+          } @else {
+            @for (t of financeTravelPreview(); track t.id) {
+              <div class="feed-row row-between">
+                <div>
+                  <div class="cell-primary">
+                    <span class="mono" style="color:var(--text-muted);font-size:12px">#{{ t.id }}</span>
+                    &middot; {{ t.destination }}
+                    @if (t.isFlagged) {
+                      <span class="flag-badge" style="margin-left:6px">Flagged</span>
+                    }
+                  </div>
+                  <div class="cell-secondary">{{ t.purpose }} &middot; {{ t.stay }} {{ t.stay === 1 ? 'day' : 'days' }}</div>
+                </div>
+                <div class="flex items-center gap-2">
+                  <span class="cell-primary num mono">{{ formatCurrency(t.estimatedBudget || 0) }}</span>
+                  <span [class]="statusBadgeClass(t.status)">{{ t.status }}</span>
+                </div>
+              </div>
+            }
+          }
+        </div>
+      </div>
+
+      <div class="card">
+        <div class="card-header">
+          <div>
+            <h2 class="card-title">Expense Audit Queue</h2>
+            <p class="card-subtitle">Submitted reimbursement claims</p>
+          </div>
+          <a routerLink="/dashboard/finance/reimbursements" class="btn btn-ghost btn-sm">Audit all &rarr;</a>
+        </div>
+        <div class="card-body" style="padding:6px 20px">
+          @if (financeClaimsPreview().length === 0) {
+            <div class="empty-state" style="padding:36px 16px">
+              <h3>No claims queued</h3>
+              <p>New employee expense submissions will appear here.</p>
+            </div>
+          } @else {
+            @for (c of financeClaimsPreview(); track c.id) {
+              <div class="feed-row row-between">
+                <div>
+                  <div class="cell-primary">{{ c.employeeName || ('Claim #' + c.id) }}</div>
+                  <div class="cell-secondary">Trip #{{ c.travelDetailId }} &middot; {{ c.expenses?.length || 0 }} receipts</div>
+                </div>
+                <div class="flex items-center gap-2">
+                  <span class="cell-primary num mono">{{ formatCurrency(c.totalAmount || 0) }}</span>
+                  <span [class]="statusBadgeClass(c.status)">{{ c.status }}</span>
+                </div>
+              </div>
+            }
+          }
+        </div>
+      </div>
+    </div>
+  } @else if (isEmployee()) {
+    <header class="page-header">
+      <div>
+        <h1 class="page-title">Welcome back, {{ displayName() }}</h1>
+        <p class="page-subtitle">Your upcoming itineraries, approval statuses, and expense claims.</p>
+      </div>
+      <div class="page-actions">
+        <a routerLink="/dashboard/my-reimbursements/new" class="btn btn-secondary btn-sm">New Claim</a>
+        <a routerLink="/dashboard/my-requests/new" class="btn btn-primary btn-sm">New Travel Request</a>
+      </div>
+    </header>
+
+    @if (roleLoadError()) {
+      <div class="alert alert-danger row-between" style="margin-bottom:20px">
+        <span>{{ roleLoadError() }}</span>
+        <button type="button" class="btn btn-secondary btn-sm" (click)="loadDashboardData()">Retry</button>
+      </div>
+    }
+
+    <section class="telemetry-band" style="margin-bottom:24px" aria-label="Traveler metrics">
+      <div class="kpi-card">
+        <div class="kpi-label">Travel Requests</div>
+        <div class="kpi-value num" [attr.data-count]="employeeRequestCount()">{{ employeeRequestCount() }}</div>
+        <div class="kpi-meta">Total submitted &amp; drafted trips</div>
+      </div>
+      <div class="kpi-card">
+        <div class="kpi-label">Approved Trips</div>
+        <div class="kpi-value num" [attr.data-count]="employeeApprovedCount()">{{ employeeApprovedCount() }}</div>
+        <div class="kpi-meta">Eligible for reimbursement claims</div>
+      </div>
+      <div class="kpi-card">
+        <div class="kpi-label">Total Claimed</div>
+        <div class="kpi-value num" [attr.data-currency]="employeeClaimedTotal()">{{ formatCurrency(employeeClaimedTotal()) }}</div>
+        <div class="kpi-meta">Across {{ employeeClaimsSignal().length }} claims</div>
+      </div>
+    </section>
+
+    <div class="overview-split" #tabPanel>
+      <div class="card">
+        <div class="card-header">
+          <div>
+            <h2 class="card-title">Your Travel Requests</h2>
+            <p class="card-subtitle">Recent itineraries and approval status</p>
+          </div>
+          <a routerLink="/dashboard/my-requests" class="btn btn-ghost btn-sm">View all &rarr;</a>
+        </div>
+        <div class="card-body" style="padding:6px 20px">
+          @if (employeeRequestsPreview().length === 0) {
+            <div class="empty-state" style="padding:36px 16px">
+              <h3>No travel requests yet</h3>
+              <p>Submit a new travel itinerary to begin manager approval.</p>
+              <a routerLink="/dashboard/my-requests/new" class="btn btn-primary btn-sm">Create Request</a>
+            </div>
+          } @else {
+            @for (r of employeeRequestsPreview(); track r.id) {
+              <div class="feed-row row-between">
+                <div>
+                  <div class="cell-primary">{{ r.destination }}</div>
+                  <div class="cell-secondary">{{ r.stay }} days &middot; {{ r.purpose }}</div>
+                </div>
+                <div class="flex items-center gap-2">
+                  <span class="cell-primary num mono">{{ formatCurrency(r.estimatedBudget || 0) }}</span>
+                  <span [class]="statusBadgeClass(r.status)">{{ r.status }}</span>
+                </div>
+              </div>
+            }
+          }
+        </div>
+      </div>
+
+      <div class="card">
+        <div class="card-header">
+          <div>
+            <h2 class="card-title">Reimbursement Claims</h2>
+            <p class="card-subtitle">Receipt itemization and payout tracking</p>
+          </div>
+          <a routerLink="/dashboard/my-reimbursements" class="btn btn-ghost btn-sm">View all &rarr;</a>
+        </div>
+        <div class="card-body" style="padding:6px 20px">
+          @if (employeeClaimsPreview().length === 0) {
+            <div class="empty-state" style="padding:36px 16px">
+              <h3>No claims submitted</h3>
+              <p>Create an expense claim once a trip is approved.</p>
+              <a routerLink="/dashboard/my-reimbursements/new" class="btn btn-secondary btn-sm">Initiate Claim</a>
+            </div>
+          } @else {
+            @for (c of employeeClaimsPreview(); track c.id) {
+              <a [routerLink]="['/dashboard/my-reimbursements', c.id]" class="feed-row row-between action-link-row">
+                <div>
+                  <div class="cell-primary">{{ c.travelDestination || c.travelDetail?.destination || ('Claim #' + c.id) }}</div>
+                  <div class="cell-secondary">{{ c.expenses?.length || 0 }} receipts attached</div>
+                </div>
+                <div class="flex items-center gap-2">
+                  <span class="cell-primary num mono">{{ formatCurrency(claimTotal(c)) }}</span>
+                  <span [class]="statusBadgeClass(c.status)">{{ c.status }}</span>
+                </div>
+              </a>
+            }
+          }
+        </div>
+      </div>
+    </div>
+  } @else {
+    <header class="page-header">
+      <div>
+        <h1 class="page-title">Welcome back, {{ displayName() }}</h1>
+        <p class="page-subtitle">Organization workforce, department budgets, and policy status at a glance.</p>
+      </div>
+      <div class="page-actions">
+        <a routerLink="/dashboard/admin/employees" class="btn btn-secondary btn-sm">
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true">
+            <path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/>
+            <line x1="19" y1="8" x2="19" y2="14"/><line x1="22" y1="11" x2="16" y2="11"/>
+          </svg>
+          Add Employee
+        </a>
+        <a routerLink="/dashboard/admin/policies" class="btn btn-primary btn-sm">
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true">
+            <line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/>
+          </svg>
+          New Policy
+        </a>
+      </div>
+    </header>
+
+    <section class="telemetry-band" style="margin-bottom:24px" aria-label="Organization metrics">
+      <div class="kpi-card">
+        <div class="row-between" style="margin-bottom:8px">
+          <span class="kpi-label">Workforce</span>
+          <svg style="color:var(--accent)" width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true">
+            <path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/>
+            <path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/>
+          </svg>
+        </div>
+        <div class="kpi-value num" [attr.data-count]="employeeCount()">{{ employeeCount() }}</div>
+        <div class="kpi-meta">{{ departmentCount() }} active departments</div>
+      </div>
+
+      <div class="kpi-card">
+        <div class="row-between" style="margin-bottom:8px">
+          <span class="kpi-label">Allocated Budget</span>
+          <svg style="color:var(--signal)" width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true">
+            <line x1="12" y1="1" x2="12" y2="23"/>
+            <path d="M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"/>
+          </svg>
+        </div>
+        <div class="kpi-value num" [attr.data-currency]="totalBudget()">{{ formatCurrency(totalBudget()) }}</div>
+        <div class="kpi-meta">Across {{ departmentCount() }} departments</div>
+      </div>
+
+      <div class="kpi-card">
+        <div class="row-between" style="margin-bottom:8px">
+          <span class="kpi-label">Active Policies</span>
+          <svg style="color:var(--success)" width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true">
+            <path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/><path d="m9 12 2 2 4-4"/>
+          </svg>
+        </div>
+        <div class="kpi-value num" [attr.data-count]="policyCount()">{{ policyCount() }}</div>
+        <div class="kpi-meta">{{ activePolicyCount() }} active rules</div>
+      </div>
+    </section>
+
+    <div class="tab-bar" role="tablist" aria-label="Dashboard sections" style="margin-bottom:20px">
+      <div class="tab-indicator" #tabIndicator aria-hidden="true"></div>
+      @for (tab of tabs; track tab.id; let i = $index) {
+        <button
+          #tabBtn
+          type="button"
+          role="tab"
+          class="tab-btn"
+          [class.active]="activeTab() === tab.id"
+          [attr.aria-selected]="activeTab() === tab.id"
+          (click)="setTab(tab.id)"
+          (keydown)="onTabKeydown($event, i)">
+          <span>{{ tab.label }}</span>
+        </button>
+      }
+    </div>
+
+    @if (activeTab() === 'overview') {
+      <div class="overview-split" #tabPanel role="tabpanel">
+        <div class="card">
+          <div class="card-header">
+            <div>
+              <h2 class="card-title">Department Budgets</h2>
+              <p class="card-subtitle">
+                {{ departmentsLoaded() ? 'Live allocations from database' : 'Annual budget allocations' }}
+              </p>
+            </div>
+            <button type="button" class="btn btn-ghost btn-sm" (click)="setTab('budgets')">
+              View all &rarr;
+            </button>
+          </div>
+          <div class="card-body flex-col gap-3">
+            @if (departmentsError()) {
+              <div class="alert alert-warning" style="font-size:12.5px;justify-content:space-between;align-items:center">
+                <span>{{ departmentsError() }}</span>
+                <button type="button" class="btn btn-secondary btn-sm" (click)="loadDashboardData()">Retry</button>
+              </div>
+            }
+            @if (departmentsLoaded() && adminDeptSpend().length === 0) {
+              <p class="cell-secondary">No departments found in the database.</p>
+            } @else {
+              @for (d of overviewDeptPreview(); track d.id ?? (d.code + d.name)) {
+                <div class="row-between" style="padding:8px 0;border-bottom:1px solid var(--border-subtle)">
+                  <div class="flex items-center gap-2">
+                    <span class="dept-tag">{{ d.code }}</span>
+                    <div>
+                      <div class="cell-primary">{{ d.name }}</div>
+                      <div class="cell-secondary">{{ d.headcount }} employees</div>
+                    </div>
+                  </div>
+                  <span class="cell-primary num mono">{{ formatCurrency(d.budget) }}</span>
+                </div>
+              }
+            }
+          </div>
+        </div>
+
+        <div class="card">
+          <div class="card-header">
+            <div>
+              <h2 class="card-title">Recent Activity</h2>
+              <p class="card-subtitle">
+                {{ auditLoaded() ? 'Live events from audit log' : 'Administrative and policy events' }}
+              </p>
+            </div>
+            <button type="button" class="btn btn-ghost btn-sm" (click)="setTab('compliance')">
+              Full log &rarr;
+            </button>
+          </div>
+          <div class="card-body" style="padding:6px 20px">
+            @if (auditError()) {
+              <div class="alert alert-warning" style="font-size:12.5px;justify-content:space-between;align-items:center;margin:10px 0">
+                <span>{{ auditError() }}</span>
+                <button type="button" class="btn btn-secondary btn-sm" (click)="loadDashboardData()">Retry</button>
+              </div>
+            }
+            @if (auditLoaded() && adminAuditLogs().length === 0) {
+              <p class="cell-secondary" style="padding:14px 0">No audit events recorded yet.</p>
+            } @else {
+              @for (log of recentAuditOverview(); track log.id) {
+                <div class="feed-row">
+                  <div class="row-between">
+                    <span class="cell-primary">{{ log.action }}</span>
+                    <span class="cell-secondary mono" style="color:var(--text-muted);white-space:nowrap">{{ log.timeAgo }}</span>
+                  </div>
+                  <p class="cell-secondary" style="margin:4px 0 8px">{{ log.detail }}</p>
+                  <div class="flex items-center gap-2">
+                    <span [class]="auditBadgeClass(log.category)">{{ log.category }}</span>
+                    <span class="cell-secondary">by {{ log.actor }}</span>
+                  </div>
+                </div>
+              }
+            }
+          </div>
+        </div>
+      </div>
+    }
+
+    @if (activeTab() === 'budgets') {
+      <div class="overview-split" #tabPanel role="tabpanel">
+        <div class="card">
+          <div class="card-header">
+            <div>
+              <h2 class="card-title">Department Spend</h2>
+              <p class="card-subtitle">YTD spend against annual allocations</p>
+            </div>
+            <span class="badge badge-draft">{{ adminDeptSpend().length }} teams</span>
+          </div>
+          <div class="card-body flex-col gap-4">
+            @if (departmentsError()) {
+              <div class="alert alert-warning" style="font-size:13px;justify-content:space-between;align-items:center">
+                <span>{{ departmentsError() }}</span>
+                <button type="button" class="btn btn-secondary btn-sm" (click)="loadDashboardData()">Retry</button>
+              </div>
+            }
+            @if (departmentsLoaded() && adminDeptSpend().length === 0) {
+              <div class="empty-state" style="padding:36px 16px">
+                <h3>No departments found</h3>
+                <p>The database returned zero departments.</p>
+              </div>
+            } @else {
+              @for (d of adminDeptSpend(); track d.id ?? (d.code + d.name)) {
+                <div class="flex-col" style="gap:6px">
+                  <div class="row-between">
+                    <div class="flex items-center gap-2">
+                      <span class="dept-tag">{{ d.code }}</span>
+                      <span class="cell-primary">{{ d.name }}</span>
+                    </div>
+                    <div class="num mono">
+                      <span class="cell-primary">{{ formatCurrency(d.spent) }}</span>
+                      <span class="cell-secondary"> / {{ formatCurrency(d.budget) }}</span>
+                    </div>
+                  </div>
+                  <div class="budget-track">
+                    <div
+                      class="budget-progress-fill"
+                      [style.width.%]="d.percentage"
+                      [class.high-spend]="d.percentage > 75">
+                    </div>
+                  </div>
+                  <div class="row-between cell-secondary">
+                    <span>{{ d.headcount }} employees</span>
+                    <span class="num">{{ d.percentage }}% used</span>
+                  </div>
+                </div>
+              }
+            }
+          </div>
+        </div>
+
+        <div class="card">
+          <div class="card-header">
+            <div>
+              <h2 class="card-title">Capital Summary</h2>
+              <p class="card-subtitle">Fiscal year budget allocation health</p>
+            </div>
+          </div>
+          <div class="card-body flex-col gap-4">
+            <div class="grid-2" style="padding-bottom:18px;border-bottom:1px solid var(--border-subtle)">
+              <div>
+                <div class="kpi-label">Total Allocated</div>
+                <div class="num mono" style="font-size:21px;font-weight:800;margin-top:4px">{{ formatCurrency(totalBudget()) }}</div>
+              </div>
+              <div>
+                <div class="kpi-label">Spent (YTD)</div>
+                <div class="num mono" style="font-size:21px;font-weight:800;margin-top:4px;color:var(--accent)">{{ formatCurrency(totalSpend()) }}</div>
+              </div>
+            </div>
+
+            <div class="flex-col gap-2" style="padding-bottom:18px;border-bottom:1px solid var(--border-subtle)">
+              <div class="row-between">
+                <span class="cell-primary">Remaining Capital</span>
+                <span class="cell-primary num mono" style="color:var(--success)">{{ formatCurrency(remainingBudget()) }}</span>
+              </div>
+              <div class="budget-track">
+                <div class="budget-progress-fill fill-success" [style.width.%]="budgetUtilization()"></div>
+              </div>
+              <p class="cell-secondary">{{ 100 - budgetUtilization() }}% available for the fiscal year</p>
+            </div>
+
+            <div class="flex-col gap-3">
+              <div class="row-between">
+                <span class="cell-secondary">Avg. spend per employee</span>
+                <span class="cell-primary num mono">{{ formatCurrency(avgCostPerTraveler()) }}</span>
+              </div>
+              <div class="row-between">
+                <span class="cell-secondary">Largest allocation</span>
+                <span class="cell-primary">{{ topBudgetDept()?.name || '—' }}</span>
+              </div>
+              <div class="row-between">
+                <span class="cell-secondary">Highest utilization</span>
+                <span class="cell-primary" style="color:var(--warning)">
+                  @if (highestUtilizationDept(); as topUtil) {
+                    {{ topUtil.name }} ({{ topUtil.percentage }}% cap)
+                  } @else {
+                    —
+                  }
+                </span>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    }
+
+    @if (activeTab() === 'compliance') {
+      <div class="overview-split" #tabPanel role="tabpanel">
+        <div class="card">
+          <div class="card-header">
+            <div>
+              <h2 class="card-title">Policy Guardrails</h2>
+              <p class="card-subtitle">Booking class mix and active rules</p>
+            </div>
+            <a routerLink="/dashboard/admin/policies" class="btn btn-ghost btn-sm">
+              Edit rules &rarr;
+            </a>
+          </div>
+          <div class="card-body flex-col gap-6">
+            @if (adminPoliciesSignal().length === 0) {
+              <div class="empty-state" style="padding:36px 16px">
+                <h3>No active policies loaded</h3>
+                <p>Configure travel rules in Travel Policies to enforce spending limits and receipts.</p>
+              </div>
+            } @else {
+              <div>
+                <div class="row-between" style="margin-bottom:8px">
+                  <span class="kpi-label">Active Rules</span>
+                  <span class="cell-primary" style="color:var(--success)">{{ activePolicyCount() }} of {{ adminPoliciesSignal().length }} Enabled</span>
+                </div>
+              </div>
+
+              <div style="border-top:1px solid var(--border-subtle)">
+                @for (policy of adminPoliciesSignal().slice(0, 5); track policy.id) {
+                  <div class="guardrail-row">
+                    <span class="check-circle" aria-hidden="true">
+                      <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
+                        <polyline points="20 6 9 17 4 12"/>
+                      </svg>
+                    </span>
+                    <div>
+                      <div class="cell-primary">{{ policy.name }}</div>
+                      <div class="cell-secondary">{{ policy.type }} &middot; {{ policy.comment || ('Threshold: ' + policy.value) }}</div>
+                    </div>
+                  </div>
+                }
+              </div>
+            }
+          </div>
+        </div>
+
+        <div class="card">
+          <div class="card-header">
+            <div>
+              <h2 class="card-title">Audit Trail</h2>
+              <p class="card-subtitle">
+                {{ auditLoaded() ? 'Live governance events from database' : 'All recorded governance events' }}
+              </p>
+            </div>
+            <span class="badge badge-draft">{{ adminAuditLogs().length }} events</span>
+          </div>
+          <div class="card-body" style="padding:6px 20px">
+            @if (auditError()) {
+              <div class="alert alert-warning" style="font-size:13px;justify-content:space-between;align-items:center;margin:10px 0">
+                <span>{{ auditError() }}</span>
+                <button type="button" class="btn btn-secondary btn-sm" (click)="loadDashboardData()">Retry</button>
+              </div>
+            }
+            @if (auditLoaded() && adminAuditLogs().length === 0) {
+              <div class="empty-state" style="padding:36px 16px">
+                <h3>No audit events yet</h3>
+                <p>Administrative actions will appear here as they occur.</p>
+              </div>
+            } @else {
+              @for (log of adminAuditLogs(); track log.id) {
+                <div class="feed-row">
+                  <div class="row-between">
+                    <span class="cell-primary">{{ log.action }}</span>
+                    <span class="cell-secondary mono" style="color:var(--text-muted);white-space:nowrap">{{ log.timeAgo }}</span>
+                  </div>
+                  <p class="cell-secondary" style="margin:4px 0 8px">{{ log.detail }}</p>
+                  <div class="flex items-center gap-2">
+                    <span [class]="auditBadgeClass(log.category)">{{ log.category }}</span>
+                    <span class="cell-secondary">by {{ log.actor }}</span>
+                  </div>
+                </div>
+              }
+            }
+          </div>
+        </div>
+      </div>
+    }
+  }
+</div>

@@ -1,0 +1,223 @@
+<div class="page-wrap">
+  @if (backendOffline()) {
+    <app-not-found
+      mode="offline"
+      [detail]="'http://localhost:6969/api/employee/reimbursement/' + id"
+      (retry)="loadDetail()" />
+  } @else {
+  <div style="margin-bottom:16px">
+    <a routerLink="/dashboard/my-reimbursements" class="back-link">
+      <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="19" y1="12" x2="5" y2="12"/><polyline points="12 19 5 12 12 5"/></svg>
+      Back to Claims
+    </a>
+  </div>
+
+  @if (loading) {
+    <div class="loading-wrap"><div class="spinner"></div></div>
+  } @else if (error) {
+    <div class="alert alert-danger row-between">
+      <span>{{ error }}</span>
+      <button type="button" class="btn btn-secondary btn-sm" (click)="loadDetail()">Retry</button>
+    </div>
+  } @else if (item) {
+    <div class="detail-header">
+      <div>
+        <div class="detail-title-row">
+          <h1 class="page-title">{{ tripSummary()?.destination || item.travelDetail?.destination || ('Reimbursement Claim #' + item.id) }}</h1>
+          <span class="inspector-id-chip">CLAIM #{{ item.id }}</span>
+          <span [class]="statusClass(item.status)"><span class="badge-dot"></span>{{ item.status }}</span>
+        </div>
+        <p class="page-subtitle">{{ item.comment || 'Expense claim itemization and receipts submission' }}</p>
+      </div>
+
+      <div class="page-actions">
+        @if (canAddExpense()) {
+          <button type="button" class="btn btn-secondary" (click)="openAddExpense()">
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
+            Add Receipt
+          </button>
+        }
+        @if (canSubmit()) {
+          <button type="button" class="btn btn-primary" (click)="submitClaim()" [disabled]="submitting">
+            @if (submitting) { <span class="spinner" style="border-top-color:#fff"></span> }
+            Submit Claim to Finance
+          </button>
+        }
+      </div>
+    </div>
+
+    <div class="card" style="margin-bottom:24px">
+      <div class="lifecycle-bar">
+        <div class="lifecycle-step" [class.done]="true">
+          <div class="step-indicator">1</div>
+          <div class="step-label">Draft Created</div>
+        </div>
+        <div class="lifecycle-connector" [class.done]="item.status !== 'DRAFT'"></div>
+        <div class="lifecycle-step" [class.done]="item.status === 'PENDING' || item.status === 'APPROVED' || item.status === 'PAID'">
+          <div class="step-indicator">2</div>
+          <div class="step-label">Finance Review</div>
+        </div>
+        <div class="lifecycle-connector" [class.done]="item.status === 'APPROVED' || item.status === 'PAID'"></div>
+        <div class="lifecycle-step" [class.done]="item.status === 'APPROVED' || item.status === 'PAID'">
+          <div class="step-indicator">3</div>
+          <div class="step-label">Authorized</div>
+        </div>
+        <div class="lifecycle-connector" [class.done]="item.status === 'PAID'"></div>
+        <div class="lifecycle-step" [class.done]="item.status === 'PAID'">
+          <div class="step-indicator">4</div>
+          <div class="step-label">Disbursed</div>
+        </div>
+      </div>
+    </div>
+
+    <div class="claim-grid">
+      <div class="card">
+        <div class="card-header"><span class="card-title">Claim Overview</span></div>
+        <div class="card-body" style="display:flex;flex-direction:column;gap:12px">
+          <div class="claim-meta-row">
+            <span class="meta-label">Employee</span>
+            <span class="meta-val">
+              {{ item.employeeName || item.user?.name || 'Staff' }}
+              @if (item.employeeEmail || item.user?.email) {
+                ({{ item.employeeEmail || item.user?.email }})
+              }
+            </span>
+          </div>
+          <div class="claim-meta-row">
+            <span class="meta-label">Associated Trip</span>
+            <span class="meta-val">
+              @if (item.travelDetailId || item.travelDetail?.id) {
+                Trip #{{ item.travelDetailId ?? item.travelDetail?.id }}
+                @if (tripSummary()?.destination || item.travelDetail?.destination) {
+                  &middot; {{ tripSummary()?.destination || item.travelDetail?.destination }}
+                }
+              } @else {
+                —
+              }
+            </span>
+          </div>
+          <div class="claim-meta-row">
+            <span class="meta-label">Initiated On</span>
+            <span class="meta-val">{{ formatDate(item.createdAt) }}</span>
+          </div>
+          @if (item.processedAt) {
+            <div class="claim-meta-row">
+              <span class="meta-label">Processed On</span>
+              <span class="meta-val">{{ formatDate(item.processedAt) }}</span>
+            </div>
+          }
+        </div>
+      </div>
+
+      <div class="card">
+        <div class="card-header">
+          <span class="card-title">Expense Itemization</span>
+          <span class="total-amount-badge">{{ formatCurrency(totalAmount()) }}</span>
+        </div>
+        <div class="card-body" style="padding:0">
+          @if (!item.expenses?.length) {
+            <div class="empty-state" style="padding:40px">
+              <svg class="empty-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M14 2H6a2 2 0 00-2 2v16a2 2 0 002 2h12a2 2 0 002-2V8z"/><polyline points="14,2 14,8 20,8"/></svg>
+              <h3>No expenses added</h3>
+              <p>Add receipts before submitting to finance.</p>
+              @if (canAddExpense()) {
+                <button type="button" class="btn btn-primary btn-sm" (click)="openAddExpense()">Add Receipt</button>
+              }
+            </div>
+          } @else {
+            <table>
+              <thead>
+                <tr>
+                  <th>Category</th>
+                  <th>Amount</th>
+                  <th>Receipt File</th>
+                  <th>Timestamp</th>
+                </tr>
+              </thead>
+              <tbody>
+                @for (e of item.expenses; track e.id) {
+                  <tr>
+                    <td><span class="pill" style="font-size:11px">{{ e.category }}</span></td>
+                    <td><strong>{{ formatCurrency(e.amount) }}</strong></td>
+                    <td>
+                      @if (e.proofFileName || e.proofUrl) {
+                        <button
+                          type="button"
+                          class="receipt-link"
+                          [disabled]="openingExpenseId() === e.id"
+                          (click)="openReceipt(e)">
+                          <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M14 2H6a2 2 0 00-2 2v16a2 2 0 002 2h12a2 2 0 002-2V8z"/><polyline points="14,2 14,8 20,8"/></svg>
+                          {{ e.proofFileName || 'View Receipt' }}
+                        </button>
+                      } @else {
+                        <span class="cell-secondary">No receipt</span>
+                      }
+                    </td>
+                    <td style="color:var(--text-secondary);font-size:12px">{{ formatDate(e.createdAt) }}</td>
+                  </tr>
+                }
+              </tbody>
+            </table>
+          }
+        </div>
+      </div>
+    </div>
+  }
+  }
+</div>
+
+@if (showModal) {
+  <div class="modal-backdrop" (click)="closeModal()">
+    <div class="modal" (click)="$event.stopPropagation()">
+      <div class="modal-header">
+        <h3 class="modal-title">Attach Expense Receipt</h3>
+        <button type="button" class="btn btn-ghost btn-icon" (click)="closeModal()">
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+        </button>
+      </div>
+
+      <form [formGroup]="expenseForm" (ngSubmit)="addExpense()" novalidate>
+        <div class="modal-body" style="display:flex;flex-direction:column;gap:16px">
+          <div class="form-group">
+            <label class="form-label" for="categorySelect">Expense Category <span class="req">*</span></label>
+            <select id="categorySelect" class="form-control" formControlName="category">
+              @for (c of categories; track c.value) {
+                <option [value]="c.value">{{ c.label }} ({{ c.value }})</option>
+              }
+            </select>
+          </div>
+
+          <div class="form-group">
+            <label class="form-label">Receipt Amount (₹) <span class="req">*</span></label>
+            <input type="number" class="form-control"
+                   [class.invalid]="expenseForm.get('amount')!.invalid && expenseForm.get('amount')!.touched"
+                   formControlName="amount" min="0.01" step="0.01" placeholder="e.g. 1450" />
+            @if (expenseForm.get('amount')!.invalid && expenseForm.get('amount')!.touched) {
+              <span class="form-error">Please specify a positive expense amount</span>
+            }
+          </div>
+
+          <div class="form-group">
+            <label class="form-label">Supporting Document (PDF / Image) <span class="req">*</span></label>
+            <div class="file-drop-area">
+              <input type="file" (change)="onFileSelected($event)"
+                     accept="image/*,application/pdf" class="file-input" />
+              <div class="file-drop-content">
+                <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7"><path d="M21 15v4a2 2 0 01-2 2H5a2 2 0 01-2-2v-4"/><polyline points="17 8 12 3 7 8"/><line x1="12" y1="3" x2="12" y2="15"/></svg>
+                <span>{{ selectedFile ? selectedFile.name : 'Choose receipt photo or PDF bill...' }}</span>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <div class="modal-footer">
+          <button type="button" class="btn btn-secondary" (click)="closeModal()">Cancel</button>
+          <button type="submit" class="btn btn-primary" [disabled]="uploadLoading || !selectedFile">
+            @if (uploadLoading) { <span class="spinner" style="border-top-color:#fff"></span> }
+            Upload & Attach
+          </button>
+        </div>
+      </form>
+    </div>
+  </div>
+}

@@ -1,0 +1,62 @@
+.skeleton-row {
+  padding: 18px 20px;
+  border-bottom: 1px solid var(--border-subtle);
+}
+
+.skeleton-row:last-child {
+  border-bottom: none;
+}
+
+.trip-id-cell {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 5px;
+}
+
+.purpose-clamp {
+  max-width: 240px;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.row-actions-cell {
+  display: inline-flex;
+  align-items: center;
+  justify-content: flex-end;
+  gap: 8px;
+}
+
+.detail-loading-box {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 12px;
+  padding: 28px 16px;
+  background: var(--bg-elevated);
+  border: 1px solid var(--border-subtle);
+  border-radius: var(--radius-md);
+}
+
+.traveler-banner {
+  flex-direction: row;
+  align-items: center;
+  gap: 12px;
+}
+
+.budget-editor-panel {
+  padding: 16px;
+  background: var(--bg-elevated);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-md);
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.budget-editor-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}

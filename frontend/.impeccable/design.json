@@ -1,0 +1,116 @@
+{
+  "schemaVersion": 2,
+  "generatedAt": "2026-11-26T15:58:00+05:30",
+  "title": "Design System: TravelDesk",
+  "extensions": {
+    "colorMeta": {
+      "masthead-navy": {
+        "role": "neutral",
+        "displayName": "Midnight Navy Masthead",
+        "canonical": "#0C162C",
+        "tonalRamp": ["#050912", "#0C162C", "#152342", "#1E3056", "#334155", "#64748B", "#94A3B8", "#E2E8F0"]
+      },
+      "cobalt-accent": {
+        "role": "secondary",
+        "displayName": "Deep Cobalt",
+        "canonical": "#1D4ED8",
+        "tonalRamp": ["#172554", "#1E3A8A", "#1E40AF", "#1D4ED8", "#3B82F6", "#60A5FA", "#93C5FD", "#EBF2FF"]
+      },
+      "signal-vermilion": {
+        "role": "primary",
+        "displayName": "Signal Vermilion",
+        "canonical": "#C2410C",
+        "tonalRamp": ["#431407", "#7C2D12", "#9A3412", "#C2410C", "#EA580C", "#F97316", "#FDBA74", "#FFF3ED"]
+      },
+      "ground-light": {
+        "role": "neutral",
+        "displayName": "Architectural Slate Ground",
+        "canonical": "#F1F4F8",
+        "tonalRamp": ["#0B1324", "#425066", "#64748B", "#B6C2D3", "#D5DCE6", "#E7ECF3", "#F1F4F8", "#FFFFFF"]
+      }
+    },
+    "typographyMeta": {
+      "display": { "displayName": "Schibsted Grotesk Display", "purpose": "Page headings and inspector titles." },
+      "body": { "displayName": "Schibsted Grotesk Body", "purpose": "Operational copy, tables, and form labels." },
+      "mono": { "displayName": "Azeret Mono", "purpose": "INR currency figures, trip IDs, and timestamps." }
+    },
+    "shadows": [
+      { "name": "surface-rest", "value": "0 1px 2px rgba(11, 19, 36, 0.05)", "purpose": "Subtle grounding for telemetry strips and cards." },
+      { "name": "inspector-dock", "value": "0 10px 26px rgba(11, 19, 36, 0.09), 0 2px 6px rgba(11, 19, 36, 0.05)", "purpose": "Elevates docked split-pane inspectors." },
+      { "name": "drawer-overlay", "value": "0 20px 48px rgba(11, 19, 36, 0.16), 0 4px 14px rgba(11, 19, 36, 0.08)", "purpose": "Elevates slide-over drawers and toast notifications." }
+    ],
+    "motion": [
+      { "name": "ease-out-expo", "value": "cubic-bezier(0.16, 1, 0.3, 1)", "purpose": "Confident arrival for drawers, tab indicators, and nav underlines." }
+    ],
+    "breakpoints": [
+      { "name": "mobile", "value": "768px" },
+      { "name": "masthead-collapse", "value": "960px" },
+      { "name": "split-pane-collapse", "value": "1120px" }
+    ]
+  },
+  "components": [
+    {
+      "name": "Primary Button",
+      "kind": "button",
+      "refersTo": "button-primary",
+      "description": "Primary Signal Vermilion CTA for submitting, approving, or authorizing.",
+      "html": "<button class=\"ds-btn-primary\">New Request</button>",
+      "css": ".ds-btn-primary { display:inline-flex; align-items:center; gap:7px; padding:9px 16px; border-radius:6px; background:#C2410C; color:#FFFFFF; font-weight:600; font-size:13.5px; border:1px solid #C2410C; cursor:pointer; transition:background-color 180ms cubic-bezier(0.16, 1, 0.3, 1), transform 110ms ease; } .ds-btn-primary:hover { background:#9A3412; border-color:#9A3412; } .ds-btn-primary:focus-visible { outline:2px solid #1D4ED8; outline-offset:2px; }"
+    },
+    {
+      "name": "Top Command Masthead",
+      "kind": "nav",
+      "refersTo": "masthead",
+      "description": "Sticky midnight-navy top header with role chip and cobalt/vermilion navigation.",
+      "html": "<header class=\"ds-masthead\"><span class=\"ds-brand\">TravelDesk</span><span class=\"ds-role\">MANAGER</span><nav class=\"ds-nav\"><a class=\"ds-link active\">Overview</a><a class=\"ds-link\">Approvals Queue</a></nav></header>",
+      "css": ".ds-masthead { display:flex; align-items:center; gap:16px; height:64px; padding:0 24px; background:#0C162C; color:#F8FAFC; } .ds-brand { font-weight:800; font-size:16px; letter-spacing:-0.025em; } .ds-role { padding:3px 8px; border-radius:3px; background:#152342; border:1px solid rgba(148,163,184,0.22); color:#9FB0C8; font-family:monospace; font-size:10.5px; font-weight:600; } .ds-nav { display:flex; gap:6px; height:100%; align-items:center; } .ds-link { padding:8px 12px; border-radius:6px; color:#9FB0C8; font-size:13.5px; text-decoration:none; } .ds-link.active { color:#F8FAFC; font-weight:700; background:rgba(255,255,255,0.08); box-shadow:inset 0 -3px 0 #C2410C; }"
+    },
+    {
+      "name": "Status Chip",
+      "kind": "chip",
+      "description": "Sharp 3px-radius status indicator with semantic dot.",
+      "html": "<span class=\"ds-badge\">APPROVED</span>",
+      "css": ".ds-badge { display:inline-flex; align-items:center; gap:5px; padding:3px 9px; border-radius:3px; font-size:11px; font-weight:700; background:#E7F7F0; color:#0D7A52; border:1px solid #A4DFC4; }"
+    },
+    {
+      "name": "Inspector Dossier Header",
+      "kind": "card",
+      "refersTo": "inspector-pane",
+      "description": "Sticky split-pane inspector header with inline mono ID chip.",
+      "html": "<div class=\"ds-inspector-head\"><span class=\"ds-title\">Mumbai</span><span class=\"ds-id\">#19</span></div>",
+      "css": ".ds-inspector-head { display:flex; align-items:center; gap:8px; padding:16px 20px; background:#E7ECF3; border:1px solid #D5DCE6; border-radius:10px 10px 0 0; } .ds-title { font-size:16px; font-weight:800; color:#0B1324; } .ds-id { font-family:monospace; font-size:11px; font-weight:600; padding:2px 7px; border-radius:3px; background:#FFFFFF; border:1px solid #D5DCE6; color:#425066; }"
+    }
+  ],
+  "narrative": {
+    "northStar": "The Sovereign Transit & Clearing Desk",
+    "overview": "TravelDesk replaces the conventional left-sidebar SaaS dashboard with a top-command clearinghouse shell inspired by international aviation dispatch boards and financial clearing ledgers. A committed midnight-navy masthead anchors global role context and navigation along the top edge, freeing the full viewport below for asymmetric operational queues and persistent split-pane inspectors.",
+    "keyCharacteristics": [
+      "Top 64px midnight-navy command masthead with role badge, horizontal navigation, and GSAP sliding active underline",
+      "Split-pane workbench (1.38fr / 0.96fr) keeping queues visible beside a sticky right-hand inspector dossier",
+      "Right-anchored slide-over drawers for profile, employee onboarding, policy editing, and receipt attachment",
+      "Tabular numeric alignment (Azeret Mono) across INR figures, trip IDs, and clearing timestamps"
+    ],
+    "rules": [
+      {
+        "name": "The Two-Accent Separation Rule",
+        "body": "Cobalt owns orientation, selection, and progress; Signal Vermilion owns primary execution and policy flags. Never use both on the same interactive element.",
+        "section": "colors"
+      },
+      {
+        "name": "The Inline Chip Rule",
+        "body": "Identifiers (#19, CLAIM #9) sit inline beside headings as mono chips, never as eyebrow kickers above headings.",
+        "section": "typography"
+      }
+    ],
+    "dos": [
+      "Do keep queues visible beside docked inspectors on desktop (> 1120px) so operators retain list context.",
+      "Do apply mono (Azeret Mono) and tabular-nums to all INR currency figures, IDs, and timestamps.",
+      "Do verify contrast across both [data-theme=\"light\"] and [data-theme=\"dark\"] tokens."
+    ],
+    "donts": [
+      "Don't place eyebrow kickers above h1/h2/h3 headings.",
+      "Don't revert to a fixed left sidebar or centered modal popups for row inspection.",
+      "Don't animate layout properties (width, height, top, left); animate transform, opacity, and stroke-dashoffset only."
+    ]
+  }
+}

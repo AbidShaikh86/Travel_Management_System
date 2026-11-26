@@ -1,0 +1,146 @@
+<div class="login-stage-shell">
+  <header class="login-masthead">
+    <div class="login-brand">
+      <span class="login-crest" aria-hidden="true">
+        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
+          <path d="M3 17l6-6 4 4 8-8"/>
+          <path d="M17 7h4v4"/>
+        </svg>
+      </span>
+      <span class="login-brand-title">TravelDesk</span>
+      <span class="login-brand-sep" aria-hidden="true">/</span>
+      <span class="login-brand-sub">Corporate Travel &amp; Expense Clearing</span>
+    </div>
+
+    <button
+      type="button"
+      class="login-theme-btn"
+      (click)="toggleTheme()"
+      [attr.aria-pressed]="isDark()"
+      [attr.aria-label]="isDark() ? 'Switch to light theme' : 'Switch to dark theme'">
+      <span #themeIcon class="login-theme-icon">
+        @if (isDark()) {
+          <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <circle cx="12" cy="12" r="5"/>
+            <line x1="12" y1="1" x2="12" y2="3"/><line x1="12" y1="21" x2="12" y2="23"/>
+            <line x1="4.22" y1="4.22" x2="5.64" y2="5.64"/><line x1="18.36" y1="18.36" x2="19.78" y2="19.78"/>
+            <line x1="1" y1="12" x2="3" y2="12"/><line x1="21" y1="12" x2="23" y2="12"/>
+          </svg>
+        } @else {
+          <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <path d="M21 12.79A9 9 0 1111.21 3 7 7 0 0021 12.79z"/>
+          </svg>
+        }
+      </span>
+      <span>{{ isDark() ? 'Light mode' : 'Dark mode' }}</span>
+    </button>
+  </header>
+
+  <main class="login-workbench">
+    <section class="manifest-board" #hero>
+      <div class="manifest-copy">
+        <h1 class="hero-anim">Every trip, policy check, and payout in one ledger.</h1>
+        <p class="hero-anim">
+          Role-scoped operational clearing for employees, managers, finance auditors, and administrators—moving corporate travel cleanly from draft itinerary to verified disbursement.
+        </p>
+      </div>
+
+      <div class="manifest-diagram hero-anim" aria-hidden="true">
+        <div class="manifest-diagram-head">
+          <span class="mono manifest-code">CLEARANCE FLOW · INR (₹)</span>
+          <span class="mono manifest-status">LIVE AUDIT LEDGER</span>
+        </div>
+
+        <svg class="manifest-arc-svg" viewBox="0 0 480 76" fill="none">
+          <line x1="24" y1="54" x2="456" y2="54" stroke="rgba(148,163,184,0.24)" stroke-width="1.5" stroke-dasharray="4 4"/>
+          <path
+            class="manifest-arc-path"
+            d="M24 54 C 120 12, 200 12, 240 54 C 280 12, 360 12, 456 54"
+            stroke="#60A5FA"
+            stroke-width="2.2"
+            stroke-linecap="round"/>
+          <circle cx="24" cy="54" r="5" fill="#F97316"/>
+          <circle cx="168" cy="24" r="4" fill="#60A5FA"/>
+          <circle cx="312" cy="24" r="4" fill="#60A5FA"/>
+          <circle cx="456" cy="54" r="5" fill="#34D399"/>
+        </svg>
+
+        <div class="manifest-legs">
+          <div class="manifest-leg">
+            <span class="leg-title">Itinerary &amp; Guardrails</span>
+            <span class="leg-desc">Draft or submit travel with real-time class, stay, and budget flagging</span>
+          </div>
+          <div class="manifest-leg">
+            <span class="leg-title">Manager Sign-Off</span>
+            <span class="leg-desc">Inline approval queue with mandatory decline rationale</span>
+          </div>
+          <div class="manifest-leg">
+            <span class="leg-title">Receipt Audit &amp; Payout</span>
+            <span class="leg-desc">Itemized PDF &amp; image proof verification prior to disbursement</span>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <section class="login-folio-pane">
+      <div class="login-card" #card>
+        <div class="login-card-header">
+          <h2>Sign in to TravelDesk</h2>
+          <p>Enter your corporate credentials to open your workspace.</p>
+        </div>
+
+        @if (errorMsg()) {
+          <div class="alert alert-danger" style="margin-bottom:18px" role="alert">
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="flex-shrink:0;margin-top:2px">
+              <circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/>
+            </svg>
+            <span>{{ errorMsg() }}</span>
+          </div>
+        }
+
+        <form [formGroup]="form" (ngSubmit)="submit()" novalidate>
+          <div class="form-group">
+            <label class="form-label" for="email">Work Email <span class="req">*</span></label>
+            <input id="email" type="email" class="form-control"
+                   [class.invalid]="emailCtrl.invalid && emailCtrl.touched"
+                   formControlName="email" placeholder="you@company.com" autocomplete="email" />
+            @if (emailCtrl.invalid && emailCtrl.touched) {
+              <span class="form-error">{{ getError(emailCtrl) }}</span>
+            }
+          </div>
+
+          <div class="form-group" style="margin-top:16px">
+            <label class="form-label" for="password">Password <span class="req">*</span></label>
+            <div class="input-wrap">
+              <input id="password" [type]="showPassword() ? 'text' : 'password'" class="form-control"
+                     [class.invalid]="passCtrl.invalid && passCtrl.touched"
+                     formControlName="password" placeholder="Enter your password" autocomplete="current-password" />
+              <button type="button" class="eye-btn" (click)="togglePassword()" tabindex="-1" [attr.aria-label]="showPassword() ? 'Hide password' : 'Show password'">
+                @if (showPassword()) {
+                  <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M17.94 17.94A10.07 10.07 0 0112 20c-7 0-11-8-11-8a18.45 18.45 0 015.06-5.94M9.9 4.24A9.12 9.12 0 0112 4c7 0 11 8 11 8a18.5 18.5 0 01-2.16 3.19m-6.72-1.07a3 3 0 11-4.24-4.24"/><line x1="1" y1="1" x2="23" y2="23"/></svg>
+                } @else {
+                  <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></svg>
+                }
+              </button>
+            </div>
+            @if (passCtrl.invalid && passCtrl.touched) {
+              <span class="form-error">{{ getError(passCtrl) }}</span>
+            }
+          </div>
+
+          <button type="submit" class="btn btn-primary btn-lg w-full" style="margin-top:22px" [disabled]="loading()">
+            @if (loading()) { <span class="spinner" style="border-top-color:currentColor"></span> }
+            {{ loading() ? "Signing in..." : "Sign in" }}
+          </button>
+        </form>
+
+        <div class="login-footer">
+          <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <rect x="3" y="11" width="18" height="11" rx="2" ry="2"/><path d="M7 11V7a5 5 0 0110 0v4"/>
+          </svg>
+          <span>Role-scoped JWT session</span>
+        </div>
+      </div>
+    </section>
+  </main>
+</div>

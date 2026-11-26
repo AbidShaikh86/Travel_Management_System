@@ -1,0 +1,119 @@
+.telemetry-band {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-lg);
+  box-shadow: var(--shadow-xs);
+  overflow: hidden;
+}
+
+.telemetry-band .kpi-card {
+  border: none;
+  border-right: 1px solid var(--border-subtle);
+  border-radius: 0;
+  box-shadow: none;
+  padding: 20px 22px;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.telemetry-band .kpi-card:last-child {
+  border-right: none;
+}
+
+.telemetry-band .kpi-card:hover {
+  background: var(--surface-hover);
+  box-shadow: none;
+}
+
+.overview-split {
+  display: grid;
+  grid-template-columns: 1.45fr 1fr;
+  gap: 20px;
+  align-items: start;
+}
+
+.feed-row,
+.guardrail-row {
+  padding: 13px 0;
+  border-bottom: 1px solid var(--border-subtle);
+}
+
+.feed-row:last-child,
+.guardrail-row:last-child {
+  border-bottom: none;
+}
+
+.action-link-row {
+  border-radius: var(--radius-sm);
+  padding: 13px 10px;
+  margin: 0 -10px;
+  transition: background-color var(--transition);
+}
+
+.action-link-row:hover {
+  background: var(--surface-hover);
+}
+
+.action-arrow {
+  color: var(--text-muted);
+  transition: transform var(--transition), color var(--transition);
+}
+
+.action-link-row:hover .action-arrow {
+  transform: translateX(3px);
+  color: var(--accent);
+}
+
+.budget-track,
+.class-bar {
+  height: 8px;
+  background: var(--surface-sunken);
+  border-radius: var(--radius-full);
+  overflow: hidden;
+  display: flex;
+}
+
+.budget-progress-fill,
+.class-segment {
+  height: 100%;
+  background: var(--accent);
+}
+
+.budget-progress-fill { border-radius: var(--radius-full); }
+.budget-progress-fill.high-spend { background: var(--signal); }
+.budget-progress-fill.fill-success { background: var(--success); }
+
+.guardrail-row {
+  display: flex;
+  align-items: flex-start;
+  gap: 12px;
+}
+
+.check-circle {
+  width: 22px;
+  height: 22px;
+  border-radius: var(--radius-xs);
+  background: var(--success-bg);
+  color: var(--success);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+  margin-top: 2px;
+}
+
+@media (max-width: 1024px) {
+  .overview-split { grid-template-columns: 1fr; }
+}
+
+@media (max-width: 768px) {
+  .telemetry-band { grid-template-columns: 1fr; }
+  .telemetry-band .kpi-card {
+    border-right: none;
+    border-bottom: 1px solid var(--border-subtle);
+  }
+  .telemetry-band .kpi-card:last-child { border-bottom: none; }
+}

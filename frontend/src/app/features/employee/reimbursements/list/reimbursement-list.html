@@ -1,0 +1,134 @@
+<div class="page-wrap">
+  @if (backendOffline()) {
+    <app-not-found
+      mode="offline"
+      detail="http://localhost:6969/api/employee/reimbursements"
+      (retry)="loadReimbursements()" />
+  } @else {
+  <header class="page-header">
+    <div>
+      <h1 class="page-title">My Reimbursements</h1>
+      <p class="page-subtitle">Manage, submit, and track expense claims for your approved travels.</p>
+    </div>
+    <div class="page-actions">
+      <a routerLink="/dashboard/my-reimbursements/new" class="btn btn-primary btn-sm">
+        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true">
+          <line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/>
+        </svg>
+        New Claim
+      </a>
+    </div>
+  </header>
+
+  <section class="summary-strip" aria-label="Reimbursement summary">
+    <div class="summary-cell">
+      <span class="summary-label">Total Claims</span>
+      <span class="summary-val num mono">{{ totalClaimsCount() }}</span>
+    </div>
+    <div class="summary-cell">
+      <span class="summary-label">Drafts</span>
+      <span class="summary-val num mono">{{ draftCount() }}</span>
+    </div>
+    <div class="summary-cell">
+      <span class="summary-label">In Finance Review</span>
+      <span class="summary-val num mono">{{ pendingCount() }}</span>
+    </div>
+    <div class="summary-cell">
+      <span class="summary-label">Total Claimed</span>
+      <span class="summary-val num mono">{{ formatCurrency(totalClaimedValue()) }}</span>
+    </div>
+  </section>
+
+  <div class="controls-bar">
+    <div class="filter-inline">
+      <label for="claimStatusSelect" class="filter-label">Status</label>
+      <select id="claimStatusSelect" class="form-control filter-select" [(ngModel)]="selectedFilter">
+        <option value="ALL">All Statuses</option>
+        <option value="DRAFT">DRAFT</option>
+        <option value="PENDING">PENDING</option>
+        <option value="APPROVED">APPROVED</option>
+        <option value="REJECTED">REJECTED</option>
+        <option value="PAID">PAID</option>
+      </select>
+    </div>
+
+    <div class="search-field">
+      <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true">
+        <circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/>
+      </svg>
+      <input type="text"
+             class="search-input"
+             aria-label="Search reimbursement claims"
+             placeholder="Search by trip destination or claim ID..."
+             [(ngModel)]="searchQuery" />
+    </div>
+  </div>
+
+  @if (loading) {
+    <div class="loading-wrap"><div class="spinner"></div></div>
+  } @else if (error) {
+    <div class="alert alert-danger row-between">
+      <span>{{ error }}</span>
+      <button type="button" class="btn btn-secondary btn-sm" (click)="loadReimbursements()">Retry</button>
+    </div>
+  } @else if (filteredItems.length === 0) {
+    <div class="card">
+      <div class="empty-state">
+        <svg class="empty-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" aria-hidden="true">
+          <path d="M14 2H6a2 2 0 00-2 2v16a2 2 0 002 2h12a2 2 0 002-2V8z"/><polyline points="14,2 14,8 20,8"/>
+        </svg>
+        <h3>No reimbursement claims</h3>
+        <p>You can create a claim once your travel request is approved.</p>
+        <a routerLink="/dashboard/my-reimbursements/new" class="btn btn-primary btn-sm" style="margin-top:6px">Create Claim</a>
+      </div>
+    </div>
+  } @else {
+    <div class="table-wrap">
+      <table>
+        <thead>
+          <tr>
+            <th>Claim</th>
+            <th>Associated Trip</th>
+            <th>Departure</th>
+            <th>Receipts</th>
+            <th style="text-align:right">Total Claim</th>
+            <th>Status</th>
+            <th>Claimed On</th>
+            <th style="text-align:right">Action</th>
+          </tr>
+        </thead>
+        <tbody>
+          @for (r of filteredItems; track r.id) {
+            <tr>
+              <td class="mono" style="color:var(--text-muted);font-weight:600">#{{ r.id }}</td>
+              <td>
+                <div class="cell-primary">
+                  @if (r.travelDestination || r.travelDetail?.destination) {
+                    {{ r.travelDestination || r.travelDetail?.destination }}
+                  } @else if (r.travelDetailId) {
+                    Trip #{{ r.travelDetailId }}
+                  } @else {
+                    —
+                  }
+                </div>
+              </td>
+              <td class="num" style="color:var(--text-secondary)">{{ formatDate(r.travelStartDate || r.travelDetail?.travelStartDate) }}</td>
+              <td>
+                <span class="pill num">{{ r.expenses?.length || 0 }} {{ r.expenses?.length === 1 ? 'item' : 'items' }}</span>
+              </td>
+              <td class="num mono" style="text-align:right"><strong>{{ formatCurrency(totalExpenses(r)) }}</strong></td>
+              <td><span [class]="statusClass(r.status)"><span class="badge-dot"></span>{{ r.status }}</span></td>
+              <td class="num" style="color:var(--text-secondary)">{{ formatDate(r.createdAt) }}</td>
+              <td style="text-align:right">
+                <a [routerLink]="['/dashboard/my-reimbursements', r.id]" class="btn btn-secondary btn-sm">
+                  View Claim
+                </a>
+              </td>
+            </tr>
+          }
+        </tbody>
+      </table>
+    </div>
+  }
+  }
+</div>

@@ -1,0 +1,262 @@
+<div class="page-wrap">
+  @if (backendOffline()) {
+    <app-not-found
+      mode="offline"
+      detail="http://localhost:6969/api/employee/requests"
+      (retry)="loadRequests()" />
+  } @else {
+  <header class="page-header">
+    <div>
+      <h1 class="page-title">My Travel Requests</h1>
+      <p class="page-subtitle">Submit, track, and inspect travel requests across your itineraries.</p>
+    </div>
+    <div class="page-actions">
+      <a routerLink="/dashboard/my-requests/new" class="btn btn-primary btn-sm">
+        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true">
+          <line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/>
+        </svg>
+        New Request
+      </a>
+    </div>
+  </header>
+
+  <section class="summary-strip" aria-label="Travel request summary">
+    <div class="summary-cell">
+      <span class="summary-label">Total Trips</span>
+      <span class="summary-val num mono">{{ totalCount() }}</span>
+    </div>
+    <div class="summary-cell">
+      <span class="summary-label">Pending Review</span>
+      <span class="summary-val num mono">{{ pendingCount() }}</span>
+    </div>
+    <div class="summary-cell">
+      <span class="summary-label">Approved</span>
+      <span class="summary-val num mono">{{ approvedCount() }}</span>
+    </div>
+    <div class="summary-cell">
+      <span class="summary-label">Policy Flagged</span>
+      <span class="summary-val num mono">{{ flaggedCount() }}</span>
+    </div>
+  </section>
+
+  <div class="controls-bar">
+    <div class="filter-inline">
+      <label for="travelStatusSelect" class="filter-label">Status</label>
+      <select id="travelStatusSelect" class="form-control filter-select" [(ngModel)]="selectedFilter">
+        <option value="ALL">All Statuses</option>
+        <option value="PENDING">PENDING</option>
+        <option value="APPROVED">APPROVED</option>
+        <option value="DRAFT">DRAFT</option>
+        <option value="REJECTED">REJECTED</option>
+        <option value="COMPLETED">COMPLETED</option>
+        <option value="CANCELLED">CANCELLED</option>
+      </select>
+    </div>
+
+    <div class="search-field">
+      <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true">
+        <circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/>
+      </svg>
+      <input type="text"
+             class="search-input"
+             aria-label="Search travel requests"
+             placeholder="Search destination, purpose, or ID..."
+             [(ngModel)]="searchQuery" />
+    </div>
+  </div>
+
+  @if (loading) {
+    <div class="loading-wrap"><div class="spinner"></div></div>
+  } @else if (error) {
+    <div class="alert alert-danger row-between">
+      <span>{{ error }}</span>
+      <button type="button" class="btn btn-secondary btn-sm" (click)="loadRequests()">Retry</button>
+    </div>
+  } @else {
+    <div class="workbench-split" [class.inspector-open]="!!selectedRequest">
+      <div class="workbench-queue">
+        @if (filteredRequests.length === 0) {
+          <div class="card">
+            <div class="empty-state">
+              <svg class="empty-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" aria-hidden="true">
+                <path d="M21 3L3 10.53v.98l6.84 2.65L12.48 21h.98L21 3z"/>
+              </svg>
+              <h3>No matching requests</h3>
+              <p>No travel requests found for the selected filter criteria.</p>
+              <button type="button" class="btn btn-secondary btn-sm" (click)="selectedFilter = 'ALL'; searchQuery = ''">Reset Filters</button>
+            </div>
+          </div>
+        } @else {
+          <div class="table-wrap">
+            <table>
+              <thead>
+                <tr>
+                  <th>ID</th>
+                  <th>Destination</th>
+                  <th>Travel Class</th>
+                  <th>Departure</th>
+                  <th>Stay</th>
+                  <th style="text-align:right">Budget</th>
+                  <th>Status</th>
+                  <th>Compliance</th>
+                  <th style="text-align:right">Action</th>
+                </tr>
+              </thead>
+              <tbody>
+                @for (r of filteredRequests; track r.id) {
+                  <tr [class.row-selected]="selectedRequest?.id === r.id">
+                    <td class="mono" style="color:var(--text-muted);font-weight:600">#{{ r.id }}</td>
+                    <td>
+                      <div class="cell-primary">{{ r.destination }}</div>
+                      <div class="purpose-sub">{{ r.purpose }}</div>
+                    </td>
+                    <td>
+                      <span class="pill">{{ travelClassLabel(r.travelClass) }}</span>
+                    </td>
+                    <td class="num" style="color:var(--text-secondary)">{{ formatDate(r.travelStartDate) }}</td>
+                    <td class="num" style="color:var(--text-secondary)">{{ r.stay }} {{ r.stay === 1 ? 'day' : 'days' }}</td>
+                    <td class="num mono" style="text-align:right"><strong>{{ formatCurrency(r.estimatedBudget) }}</strong></td>
+                    <td><span [class]="statusClass(r.status)"><span class="badge-dot"></span>{{ r.status }}</span></td>
+                    <td>
+                      @if (r.isFlagged) {
+                        <span class="flag-badge" title="Flagged for policy violation">
+                          <svg width="11" height="11" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true">
+                            <path d="M4 15s1-1 4-1 5 2 8 2 4-1 4-1V3s-1 1-4 1-5-2-8-2-4 1-4 1zM4 22v-7"/>
+                          </svg>
+                          Flagged
+                        </span>
+                      } @else {
+                        <span class="badge badge-success">Compliant</span>
+                      }
+                    </td>
+                    <td style="text-align:right">
+                      <div class="flex items-center justify-end gap-2" style="display:inline-flex">
+                        @if (r.status === 'DRAFT') {
+                          <a [routerLink]="['/dashboard/my-requests', r.id, 'edit']"
+                             [state]="{ request: r }"
+                             class="btn btn-ghost btn-sm">
+                            Edit Draft
+                          </a>
+                        }
+                        <button type="button" class="btn btn-secondary btn-sm" (click)="viewDetail(r)">
+                          Itinerary
+                        </button>
+                      </div>
+                    </td>
+                  </tr>
+                }
+              </tbody>
+            </table>
+          </div>
+        }
+      </div>
+
+      @if (selectedRequest) {
+        <div class="inspector-backdrop" (click)="closeModal()" aria-hidden="true"></div>
+        <aside
+          class="inspector-pane itinerary-inspector"
+          role="dialog"
+          aria-modal="false"
+          aria-labelledby="itinerary-inspector-title">
+          <div class="inspector-header">
+            <div class="inspector-title-row">
+              <h2 id="itinerary-inspector-title" class="inspector-title">{{ selectedRequest.destination }}</h2>
+              <span class="inspector-id-chip">Request #{{ selectedRequest.id }}</span>
+            </div>
+            <button type="button" class="btn btn-ghost btn-icon" (click)="closeModal()" aria-label="Close itinerary inspector">
+              <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                <line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/>
+              </svg>
+            </button>
+          </div>
+
+          <div class="inspector-body">
+            <div class="itinerary-card">
+              <div class="itinerary-header">
+                <span class="itinerary-title">Itinerary Route</span>
+                <span class="pill">{{ resolvedTravelClass(selectedRequest.travelClass) }}</span>
+              </div>
+
+              <div class="itinerary-timeline">
+                <div class="timeline-stop">
+                  <div class="stop-dot"></div>
+                  <div class="stop-label">Departure</div>
+                  <div class="stop-date num">{{ formatDate(selectedRequest.travelStartDate) }}</div>
+                </div>
+
+                <div class="timeline-bar">
+                  <div class="timeline-bar-fill"></div>
+                  <span class="bar-duration num">{{ selectedRequest.stay }} {{ selectedRequest.stay === 1 ? 'Day' : 'Days' }} Stay</span>
+                </div>
+
+                <div class="timeline-stop" style="align-items:flex-end;text-align:right">
+                  <div class="stop-dot end"></div>
+                  <div class="stop-label">Return Date</div>
+                  <div class="stop-date num">{{ getReturnDate(selectedRequest.travelStartDate, selectedRequest.stay) }}</div>
+                </div>
+              </div>
+            </div>
+
+            <div class="detail-grid">
+              <div class="detail-block">
+                <span class="detail-block-label">Current Status</span>
+                <span><span [class]="statusClass(selectedRequest.status)"><span class="badge-dot"></span>{{ selectedRequest.status }}</span></span>
+              </div>
+              <div class="detail-block">
+                <span class="detail-block-label">Manager Approval</span>
+                @if (detailLoading()) {
+                  <span class="cell-secondary">Checking...</span>
+                } @else {
+                  <span><span [class]="statusClass(resolvedManagerApproval())"><span class="badge-dot"></span>{{ resolvedManagerApproval() }}</span></span>
+                }
+              </div>
+              <div class="detail-block">
+                <span class="detail-block-label">Estimated Budget</span>
+                <span class="detail-block-value num mono">{{ formatCurrency(selectedRequest.estimatedBudget) }}</span>
+              </div>
+              <div class="detail-block">
+                <span class="detail-block-label">Policy Status</span>
+                @if (selectedRequest.isFlagged) {
+                  <span><span class="flag-badge">Flagged Violation</span></span>
+                } @else {
+                  <span><span class="badge badge-success">Within Guidelines</span></span>
+                }
+              </div>
+              <div class="detail-block">
+                <span class="detail-block-label">Submitted On</span>
+                <span class="detail-block-value num" style="font-weight:600">{{ formatDate(selectedRequest.createdAt) }}</span>
+              </div>
+            </div>
+
+            <div class="purpose-section">
+              <span class="section-label">Travel Purpose</span>
+              <p class="section-text">{{ selectedRequest.purpose }}</p>
+            </div>
+
+            @if (selectedRequest.justification) {
+              <div class="alert alert-warning" style="font-size:13px">
+                <div>
+                  <strong>Policy Justification</strong>
+                  <div style="margin-top:3px">{{ selectedRequest.justification }}</div>
+                </div>
+              </div>
+            }
+          </div>
+
+          <div class="inspector-footer">
+            @if (selectedRequest.status === 'DRAFT') {
+              <a [routerLink]="['/dashboard/my-requests', selectedRequest.id, 'edit']"
+                 [state]="{ request: selectedRequest }"
+                 class="btn btn-primary btn-sm"
+                 (click)="closeModal()">
+                Edit Draft
+              </a>
+            }
+            <button type="button" class="btn btn-secondary btn-sm" (click)="closeModal()">Close</button>
+          </div>
+        </aside>
+      }
+    </div>
+  }
+  }
+</div>
