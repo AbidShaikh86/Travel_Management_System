@@ -1,3 +1,35 @@
+<ng-template #navIconTpl let-icon>
+  @switch (icon) {
+    @case ('grid') {
+      <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="7" height="7" rx="1"/><rect x="14" y="3" width="7" height="7" rx="1"/><rect x="14" y="14" width="7" height="7" rx="1"/><rect x="3" y="14" width="7" height="7" rx="1"/></svg>
+    }
+    @case ('plane') {
+      <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 3L3 10.53v.98l6.84 2.65L12.48 21h.98L21 3z"/></svg>
+    }
+    @case ('plus-circle') {
+      <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="16"/><line x1="8" y1="12" x2="16" y2="12"/></svg>
+    }
+    @case ('receipt') {
+      <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M14 2H6a2 2 0 00-2 2v16a2 2 0 002 2h12a2 2 0 002-2V8z"/><polyline points="14,2 14,8 20,8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/></svg>
+    }
+    @case ('check-circle') {
+      <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M22 11.08V12a10 10 0 11-5.93-9.14"/><polyline points="22,4 12,14.01 9,11.01"/></svg>
+    }
+    @case ('dollar') {
+      <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="12" y1="1" x2="12" y2="23"/><path d="M17 5H9.5a3.5 3.5 0 000 7h5a3.5 3.5 0 010 7H6"/></svg>
+    }
+    @case ('file-text') {
+      <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M14 2H6a2 2 0 00-2 2v16a2 2 0 002 2h12a2 2 0 002-2V8z"/><polyline points="14,2 14,8 20,8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/></svg>
+    }
+    @case ('users') {
+      <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M17 21v-2a4 4 0 00-4-4H5a4 4 0 00-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 00-3-3.87"/><path d="M16 3.13a4 4 0 010 7.75"/></svg>
+    }
+    @case ('shield') {
+      <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/></svg>
+    }
+  }
+</ng-template>
+
 <div class="shell">
   <header class="masthead" #masthead>
     <div class="masthead-inner">
@@ -14,52 +46,24 @@
 
         <span class="masthead-sep" aria-hidden="true"></span>
         <span class="role-chip mono" [title]="'Signed in as ' + normalizedRole()">{{ normalizedRole() }}</span>
-      </div>
 
-      <nav class="masthead-nav" #navBar aria-label="Primary navigation">
-        <div class="nav-indicator" #navIndicator aria-hidden="true"></div>
-        @for (item of navItems(); track item.path) {
-          <a
-            #navLink
-            class="nav-link"
-            [class.active]="isNavActive(item.path)"
-            [attr.aria-current]="isNavActive(item.path) ? 'page' : null"
-            [routerLink]="item.path">
-            <span class="nav-icon" aria-hidden="true">
-              @switch (item.icon) {
-                @case ('grid') {
-                  <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="7" height="7" rx="1"/><rect x="14" y="3" width="7" height="7" rx="1"/><rect x="14" y="14" width="7" height="7" rx="1"/><rect x="3" y="14" width="7" height="7" rx="1"/></svg>
-                }
-                @case ('plane') {
-                  <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 3L3 10.53v.98l6.84 2.65L12.48 21h.98L21 3z"/></svg>
-                }
-                @case ('plus-circle') {
-                  <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="16"/><line x1="8" y1="12" x2="16" y2="12"/></svg>
-                }
-                @case ('receipt') {
-                  <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M14 2H6a2 2 0 00-2 2v16a2 2 0 002 2h12a2 2 0 002-2V8z"/><polyline points="14,2 14,8 20,8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/></svg>
-                }
-                @case ('check-circle') {
-                  <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M22 11.08V12a10 10 0 11-5.93-9.14"/><polyline points="22,4 12,14.01 9,11.01"/></svg>
-                }
-                @case ('dollar') {
-                  <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="12" y1="1" x2="12" y2="23"/><path d="M17 5H9.5a3.5 3.5 0 000 7h5a3.5 3.5 0 010 7H6"/></svg>
-                }
-                @case ('file-text') {
-                  <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M14 2H6a2 2 0 00-2 2v16a2 2 0 002 2h12a2 2 0 002-2V8z"/><polyline points="14,2 14,8 20,8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/></svg>
-                }
-                @case ('users') {
-                  <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M17 21v-2a4 4 0 00-4-4H5a4 4 0 00-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 00-3-3.87"/><path d="M16 3.13a4 4 0 010 7.75"/></svg>
-                }
-                @case ('shield') {
-                  <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/></svg>
-                }
-              }
-            </span>
-            <span>{{ item.label }}</span>
-          </a>
-        }
-      </nav>
+        <nav class="masthead-nav" #navBar aria-label="Primary navigation">
+          <div class="nav-indicator" #navIndicator aria-hidden="true"></div>
+          @for (item of navItems(); track item.path) {
+            <a
+              #navLink
+              class="nav-link"
+              [class.active]="isNavActive(item.path)"
+              [attr.aria-current]="isNavActive(item.path) ? 'page' : null"
+              [routerLink]="item.path">
+              <span class="nav-icon" aria-hidden="true">
+                <ng-container *ngTemplateOutlet="navIconTpl; context: { $implicit: item.icon }" />
+              </span>
+              <span>{{ item.label }}</span>
+            </a>
+          }
+        </nav>
+      </div>
 
       <div class="masthead-right">
         <button
@@ -136,6 +140,10 @@
     @if (mobileMenuOpen()) {
       <div class="mobile-nav-backdrop" (click)="closeMobileMenu()" aria-hidden="true"></div>
       <div class="mobile-nav-drawer" role="navigation" aria-label="Mobile navigation">
+        <div class="mobile-user-strip">
+          <div class="mobile-user-name">{{ user().name }}</div>
+          <span class="role-chip mono">{{ normalizedRole() }}</span>
+        </div>
         @for (section of navSections(); track section.title) {
           <div class="mobile-nav-group">
             <div class="mobile-nav-label">{{ section.title }}</div>
@@ -146,6 +154,9 @@
                   [class.active]="isNavActive(item.path)"
                   [attr.aria-current]="isNavActive(item.path) ? 'page' : null"
                   [routerLink]="item.path">
+                  <span class="nav-icon" aria-hidden="true">
+                    <ng-container *ngTemplateOutlet="navIconTpl; context: { $implicit: item.icon }" />
+                  </span>
                   <span>{{ item.label }}</span>
                 </a>
               }

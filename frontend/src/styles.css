@@ -1259,6 +1259,88 @@ tbody tr.row-selected td {
 }
 
 /* ==========================================================================
+   Masthead Mobile Navigation Overlay
+   ========================================================================== */
+
+.mobile-menu-btn,
+.mobile-nav-drawer,
+.mobile-nav-backdrop {
+  display: none;
+}
+
+@media (max-width: 1024px) {
+  .mobile-menu-btn {
+    display: inline-flex;
+  }
+
+  .mobile-nav-backdrop {
+    display: block;
+    position: fixed;
+    inset: var(--masthead-h) 0 0;
+    background: var(--backdrop);
+    z-index: 38;
+  }
+
+  .mobile-nav-drawer {
+    display: flex;
+    flex-direction: column;
+    gap: 14px;
+    position: absolute;
+    inset: 100% 0 auto;
+    z-index: 39;
+    padding: 14px 16px 18px;
+    background: var(--masthead-surface);
+    border-block: 1px solid var(--masthead-border);
+    box-shadow: var(--shadow-lg);
+  }
+
+  .mobile-user-strip {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding-bottom: 10px;
+    border-bottom: 1px solid var(--masthead-border);
+    font-size: 13.5px;
+    font-weight: 700;
+  }
+
+  .mobile-nav-group,
+  .mobile-nav-links {
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+  }
+
+  .mobile-nav-label {
+    font-size: 10.5px;
+    font-weight: 700;
+    letter-spacing: 0.06em;
+    text-transform: uppercase;
+    color: #9fb0c8;
+  }
+
+  .mobile-nav-item {
+    display: flex;
+    align-items: center;
+    gap: 9px;
+    padding: 9px 12px;
+    border-radius: var(--radius-sm);
+    font-size: 13.5px;
+    font-weight: 600;
+    color: #cbd5e1;
+  }
+
+  .mobile-nav-item.active {
+    background: rgba(255, 255, 255, 0.14);
+    color: #fff;
+  }
+
+  .mobile-nav-item.active .nav-icon {
+    color: var(--signal);
+  }
+}
+
+/* ==========================================================================
    View Transitions & Reduced Motion
    ========================================================================== */
 

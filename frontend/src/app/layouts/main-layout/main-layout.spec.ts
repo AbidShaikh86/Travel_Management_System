@@ -33,6 +33,7 @@ describe("MainLayout navbar", () => {
     const router = TestBed.inject(Router);
 
     const fixture = TestBed.createComponent(MainLayout);
+    const comp = fixture.componentInstance;
     await router.navigateByUrl("/dashboard/my-requests/new");
     fixture.detectChanges();
 
@@ -43,6 +44,11 @@ describe("MainLayout navbar", () => {
     const activeLinks = el.querySelectorAll(".masthead-nav .nav-link.active");
     expect(activeLinks.length).toBe(1);
     expect(activeLinks[0].textContent?.trim()).toContain("New Request");
+    expect(activeLinks[0].getAttribute("aria-current")).toBe("page");
+
+    comp.toggleMobileMenu();
+    fixture.detectChanges();
+    expect(el.querySelectorAll(".mobile-nav-drawer .nav-icon svg").length).toBe(5);
 
     auth.currentUser.set(null);
   });

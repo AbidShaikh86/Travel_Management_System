@@ -14,6 +14,7 @@ import {
   ChangeDetectionStrategy,
   DestroyRef
 } from "@angular/core";
+import { NgTemplateOutlet } from "@angular/common";
 import { RouterOutlet, RouterLink, Router, NavigationEnd } from "@angular/router";
 import { ReactiveFormsModule, FormBuilder, Validators } from "@angular/forms";
 import { takeUntilDestroyed } from "@angular/core/rxjs-interop";
@@ -46,7 +47,7 @@ export interface NavSection {
 
 @Component({
   selector: "app-main-layout",
-  imports: [RouterOutlet, RouterLink, ReactiveFormsModule],
+  imports: [RouterOutlet, RouterLink, NgTemplateOutlet, ReactiveFormsModule],
   templateUrl: "./main-layout.html",
   styleUrl: "./main-layout.css",
   changeDetection: ChangeDetectionStrategy.OnPush

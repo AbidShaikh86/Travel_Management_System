@@ -204,15 +204,19 @@ export function animateTabIndicator(indicator: HTMLElement, target: HTMLElement,
 export function animateNavIndicator(indicator: HTMLElement, target: HTMLElement, immediate = false) {
   if (!indicator || !target) return;
   const x = target.offsetLeft;
+  const y = target.offsetTop;
   const width = target.offsetWidth;
+  const height = target.offsetHeight;
   gsap.killTweensOf(indicator);
   if (immediate || prefersReducedMotion()) {
-    gsap.set(indicator, { x, width, opacity: 1 });
+    gsap.set(indicator, { x, y, width, height, opacity: 1 });
     return;
   }
   gsap.to(indicator, {
     x,
+    y,
     width,
+    height,
     opacity: 1,
     duration: 0.26,
     ease: "power3.out",
