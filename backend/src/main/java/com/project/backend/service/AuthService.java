@@ -5,6 +5,7 @@ import com.project.backend.DTO.GlobalResponse;
 import com.project.backend.DTO.LoginRequest;
 import com.project.backend.DTO.LoginResponse;
 import com.project.backend.config.ApplicationConfig;
+import com.project.backend.model.Enumerator.AuditEntityType;
 import com.project.backend.model.UserAuth;
 import com.project.backend.repository.UserAuthRepository;
 import com.project.backend.util.GlobalMessage;
@@ -29,6 +30,7 @@ public class AuthService {
     private final JwtService jwtService;
     private final ApplicationConfig applicationConfig;
     private final GlobalMessage globalMessage;
+    private final AuditService auditService;
 
     public LoginResponse login(LoginRequest loginRequest){
         Authentication authentication = authenticationManager.authenticate(
@@ -44,6 +46,14 @@ public class AuthService {
                 .orElseThrow(() -> new UsernameNotFoundException("User not found with email: " + loginRequest.getEmail()));
 
         String token = jwtService.generateToken(userDetails, userAuth.getRole().name());
+
+        this.auditService.log(
+                AuditEntityType.USER_AUTH,
+                userAuth.getId(),
+                "LOGIN",
+                "User logged in email=" + userAuth.getUser().getEmail()
+                        + ", role=" + userAuth.getRole()
+        );
 
         return LoginResponse.builder()
                 .token(token)
@@ -69,6 +79,12 @@ public class AuthService {
 
         auth.setPasswordHash(applicationConfig.passwordEncoder().encode(request.getNewPassword()));
         this.userAuthRepository.save(auth);
+        this.auditService.log(
+                AuditEntityType.USER_AUTH,
+                auth.getId(),
+                "CHANGE_PASSWORD",
+                "Password changed for email=" + email
+        );
         return this.globalMessage.GlobalMessageHandler(true, "Password has been changed", HttpStatus.ACCEPTED);
     }
 }

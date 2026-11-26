@@ -5,6 +5,7 @@ import com.project.backend.DTO.Employee.TravelRequest;
 import com.project.backend.DTO.Employee.TravelResponse;
 import com.project.backend.DTO.GlobalResponse;
 import com.project.backend.model.*;
+import com.project.backend.model.Enumerator.AuditEntityType;
 import com.project.backend.model.Enumerator.Status;
 import com.project.backend.model.Enumerator.TravelClass;
 import com.project.backend.repository.*;
@@ -30,6 +31,7 @@ public class EmployeeService {
      private final GlobalMessage globalMessage;
      private final PolicyRepository policyRepository;
      private final TravelPolicyFlagRepository travelPolicyFlagRepository;
+     private final AuditService auditService;
 
      public EmployeeService(TravelRequestRepository travelRequestRepository,
                             UserRepository userRepository,
@@ -37,7 +39,8 @@ public class EmployeeService {
                             DepartmentRepository departmentRepository,
                             GlobalMessage globalMessage,
                             PolicyRepository policyRepository,
-                            TravelPolicyFlagRepository travelPolicyFlagRepository){
+                            TravelPolicyFlagRepository travelPolicyFlagRepository,
+                            AuditService auditService){
          this.travelRequestRepository = travelRequestRepository;
          this.userRepository = userRepository;
          this.approvalRepository = approvalRepository;
@@ -45,6 +48,7 @@ public class EmployeeService {
          this.globalMessage = globalMessage;
          this.policyRepository = policyRepository;
          this.travelPolicyFlagRepository = travelPolicyFlagRepository;
+         this.auditService = auditService;
      }
 
     @Transactional
@@ -109,6 +113,14 @@ public class EmployeeService {
         savedTravel.setIsFlagged(policyCheck(savedTravel, travelRequest).getIsFlagged());
 
         this.travelRequestRepository.save(savedTravel);
+        this.auditService.log(
+                AuditEntityType.TRAVEL_DETAIL,
+                savedTravel.getId(),
+                "CREATE_TRAVEL_REQUEST",
+                "Created travel request destination=" + savedTravel.getDestination()
+                        + ", budget=" + savedTravel.getEstimatedBudget()
+                        + ", status=" + savedTravel.getStatus()
+        );
         return this.globalMessage.GlobalMessageHandler(true, "Travel request has been added successfully!", HttpStatus.CREATED);
     }
 
@@ -242,6 +254,15 @@ public class EmployeeService {
         TravelDetail savedTravel = this.travelRequestRepository.save(detail);
         savedTravel.setIsFlagged(Boolean.TRUE.equals(policyCheck(savedTravel, request).getIsFlagged()));
         this.travelRequestRepository.save(savedTravel);
+
+        this.auditService.log(
+                AuditEntityType.TRAVEL_DETAIL,
+                savedTravel.getId(),
+                "UPDATE_TRAVEL_REQUEST",
+                "Updated travel request destination=" + savedTravel.getDestination()
+                        + ", budget=" + savedTravel.getEstimatedBudget()
+                        + ", status=" + savedTravel.getStatus()
+        );
 
         String msg = targetStatus == Status.PENDING
                 ? "Travel request has been submitted for approval!"

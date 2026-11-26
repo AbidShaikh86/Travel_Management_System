@@ -10,6 +10,7 @@ import com.project.backend.DTO.Manager.ManagerTravelDetailResponse;
 import com.project.backend.DTO.Manager.TeamMemberResponse;
 import com.project.backend.model.ApprovalFlow;
 import com.project.backend.model.Department;
+import com.project.backend.model.Enumerator.AuditEntityType;
 import com.project.backend.model.Enumerator.Status;
 import com.project.backend.model.Enumerator.TravelClass;
 import com.project.backend.model.TravelDetail;
@@ -48,19 +49,22 @@ public class ManagerService {
     private final TravelPolicyFlagRepository travelPolicyFlagRepository;
     private final DepartmentRepository departmentRepository;
     private final GlobalMessage globalMessage;
+    private final AuditService auditService;
 
     public ManagerService(ApprovalRepository approvalRepository,
                           TravelRequestRepository travelRequestRepository,
                           UserRepository userRepository,
                           TravelPolicyFlagRepository travelPolicyFlagRepository,
                           DepartmentRepository departmentRepository,
-                          GlobalMessage globalMessage){
+                          GlobalMessage globalMessage,
+                          AuditService auditService){
         this.approvalRepository = approvalRepository;
         this.travelRequestRepository = travelRequestRepository;
         this.userRepository = userRepository;
         this.travelPolicyFlagRepository = travelPolicyFlagRepository;
         this.departmentRepository = departmentRepository;
         this.globalMessage = globalMessage;
+        this.auditService = auditService;
     }
 
     @Transactional
@@ -104,10 +108,23 @@ public class ManagerService {
         flow.setStatus(newStatus);
         flow.setComment(request.getComment());
         flow.setActionDate(LocalDateTime.now());
-        this.approvalRepository.save(flow);
+        ApprovalFlow savedFlow = this.approvalRepository.save(flow);
+
+        if (savedFlow.getStatus() == Status.REJECTED){
+            detail.setStatus(Status.REJECTED);
+        }
 
         detail.setUpdatedAt(LocalDateTime.now());
         this.travelRequestRepository.save(detail);
+
+        this.auditService.log(
+                AuditEntityType.APPROVAL_FLOW,
+                flow.getId(),
+                "UPDATE_APPROVAL_STATUS",
+                "Manager updated travel request id=" + id
+                        + ", status=" + newStatus
+                        + ", comment=" + request.getComment()
+        );
 
         return this.globalMessage.GlobalMessageHandler(true, "Status has been updated!", HttpStatus.ACCEPTED);
     }
@@ -211,6 +228,15 @@ public class ManagerService {
 
         ApprovalFlow savedFlow = this.approvalRepository.save(flow);
         savedTravel.setApprovalFlow(savedFlow);
+
+        this.auditService.log(
+                AuditEntityType.TRAVEL_DETAIL,
+                savedTravel.getId(),
+                "ASSIGN_TRAVEL",
+                "Manager assigned travel to employeeId=" + employee.getId()
+                        + ", destination=" + savedTravel.getDestination()
+                        + ", budget=" + savedTravel.getEstimatedBudget()
+        );
 
         return this.globalMessage.GlobalMessageHandler(true, "Travel assigned and approved successfully!", HttpStatus.CREATED);
     }

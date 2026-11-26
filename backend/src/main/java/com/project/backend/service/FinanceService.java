@@ -8,6 +8,7 @@ import com.project.backend.DTO.reimbursement.ExpenseResponse;
 import com.project.backend.DTO.Finance.FinanceBudgetRequest;
 import com.project.backend.DTO.reimbursement.ReimbursementResponse;
 import com.project.backend.model.*;
+import com.project.backend.model.Enumerator.AuditEntityType;
 import com.project.backend.model.Enumerator.ReimbursementStatus;
 import com.project.backend.model.Enumerator.Status;
 import com.project.backend.repository.*;
@@ -31,18 +32,21 @@ public class FinanceService {
     private final TravelPolicyFlagRepository travelPolicyFlagRepository;
     private final ExpenseRepository expenseRepository;
     private final GlobalMessage globalMessage;
+    private final AuditService auditService;
 
     public FinanceService(TravelRequestRepository travelRequestRepository,
                           ReimbursementRepository reimbursementRepository,
                           DepartmentRepository departmentRepository,
                           TravelPolicyFlagRepository travelPolicyFlagRepository, ExpenseRepository expenseRepository,
-                          GlobalMessage globalMessage){
+                          GlobalMessage globalMessage,
+                          AuditService auditService){
         this.travelRequestRepository = travelRequestRepository;
         this.reimbursementRepository = reimbursementRepository;
         this.departmentRepository = departmentRepository;
         this.travelPolicyFlagRepository = travelPolicyFlagRepository;
         this.expenseRepository = expenseRepository;
         this.globalMessage = globalMessage;
+        this.auditService = auditService;
     }
 
     @Transactional
@@ -63,6 +67,14 @@ public class FinanceService {
         travelDetail.setUpdatedAt(LocalDateTime.now());
 
         this.travelRequestRepository.save(travelDetail);
+        this.auditService.log(
+                AuditEntityType.TRAVEL_DETAIL,
+                travelDetail.getId(),
+                "FINANCE_BUDGET_UPDATE",
+                "Finance updated travel budget id=" + travelDetail.getId()
+                        + ", budget=" + financeBudgetRequest.getBudget()
+                        + ", status=" + financeBudgetRequest.getStatus()
+        );
         return this.globalMessage.GlobalMessageHandler(true, "Status has been updated!", HttpStatus.ACCEPTED);
     }
 

@@ -8,6 +8,7 @@ import com.project.backend.DTO.reimbursement.ProofResponse;
 import com.project.backend.DTO.reimbursement.ReimbursementRequest;
 import com.project.backend.DTO.reimbursement.ReimbursementResponse;
 import com.project.backend.model.*;
+import com.project.backend.model.Enumerator.AuditEntityType;
 import com.project.backend.model.Enumerator.ExpenseCategory;
 import com.project.backend.model.Enumerator.ReimbursementStatus;
 import com.project.backend.model.Enumerator.Status;
@@ -38,10 +39,12 @@ public class ReimbursementService {
     private final ExpenseProofRepository expenseProofRepository;
     private final StoreFile storeFile;
     private final GlobalMessage globalMessage;
+    private final AuditService auditService;
 
     public ReimbursementService(ReimbursementRepository reimbursementRepository,
                                 UserRepository userRepository,
-                                TravelRequestRepository travelRequestRepository, ExpenseRepository expenseRepository, ExpenseProofRepository expenseProofRepository, StoreFile storeFile, GlobalMessage globalMessage){
+                                TravelRequestRepository travelRequestRepository, ExpenseRepository expenseRepository, ExpenseProofRepository expenseProofRepository, StoreFile storeFile, GlobalMessage globalMessage,
+                                AuditService auditService){
         this.reimbursementRepository = reimbursementRepository;
         this.userRepository = userRepository;
         this.travelRequestRepository = travelRequestRepository;
@@ -49,6 +52,7 @@ public class ReimbursementService {
         this.expenseProofRepository = expenseProofRepository;
         this.storeFile = storeFile;
         this.globalMessage = globalMessage;
+        this.auditService = auditService;
     }
 
     @Transactional
@@ -81,6 +85,13 @@ public class ReimbursementService {
                 .build();
 
         this.reimbursementRepository.save(reim);
+        this.auditService.log(
+                AuditEntityType.REIMBURSEMENT,
+                reim.getId(),
+                "CREATE_REIMBURSEMENT",
+                "Created reimbursement for travelId=" + detail.getId()
+                        + ", employeeEmail=" + user.getEmail()
+        );
         return this.globalMessage.GlobalMessageHandler(true, "Reimbursement Request has been created successfully!", HttpStatus.CREATED);
     }
 
@@ -136,6 +147,14 @@ public class ReimbursementService {
 
         reimbursement.getExpenses().add(newExpense);
         this.reimbursementRepository.save(reimbursement);
+        this.auditService.log(
+                AuditEntityType.EXPENSE,
+                newExpense.getId(),
+                "ADD_EXPENSE",
+                "Added expense to reimbursementId=" + id
+                        + ", category=" + expenseRequest.getCategory()
+                        + ", amount=" + expenseRequest.getAmount()
+        );
         return this.globalMessage.GlobalMessageHandler(true, "Expense has been added successfully!", HttpStatus.CREATED);
     }
 
@@ -159,6 +178,12 @@ public class ReimbursementService {
 
         reim.setStatus(ReimbursementStatus.PENDING);
         this.reimbursementRepository.save(reim);
+        this.auditService.log(
+                AuditEntityType.REIMBURSEMENT,
+                reim.getId(),
+                "SUBMIT_REIMBURSEMENT",
+                "Submitted reimbursement id=" + reim.getId()
+        );
         return this.globalMessage.GlobalMessageHandler(true, "Reimbursement submitted successfully!", HttpStatus.ACCEPTED);
     }
 
@@ -178,6 +203,13 @@ public class ReimbursementService {
         reim.setStatus(targetStatus);
         reim.setProcessedAt(LocalDateTime.now());
         this.reimbursementRepository.save(reim);
+        this.auditService.log(
+                AuditEntityType.REIMBURSEMENT,
+                reim.getId(),
+                "FINANCE_REIMBURSEMENT_UPDATE",
+                "Finance updated reimbursement id=" + reim.getId()
+                        + ", status=" + targetStatus
+        );
         return this.globalMessage.GlobalMessageHandler(true, "You have updated status successfully!", HttpStatus.ACCEPTED);
     }
 
@@ -192,6 +224,12 @@ public class ReimbursementService {
 
         reim.setStatus(ReimbursementStatus.PAID);
         this.reimbursementRepository.save(reim);
+        this.auditService.log(
+                AuditEntityType.REIMBURSEMENT,
+                reim.getId(),
+                "REIMBURSEMENT_PAID",
+                "Reimbursement marked as PAID id=" + reim.getId()
+        );
         return this.globalMessage.GlobalMessageHandler(true, "You have updated status successfully!", HttpStatus.ACCEPTED);
     }
 
