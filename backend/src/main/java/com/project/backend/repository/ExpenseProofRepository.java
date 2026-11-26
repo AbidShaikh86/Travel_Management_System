@@ -1,0 +1,18 @@
+package com.project.backend.repository;
+
+import com.project.backend.model.ExpenseProof;
+import org.springframework.data.jpa.repository.EntityGraph;
+import org.springframework.data.jpa.repository.JpaRepository;
+import org.springframework.stereotype.Repository;
+
+import java.util.List;
+import java.util.Optional;
+
+@Repository
+public interface ExpenseProofRepository extends JpaRepository<ExpenseProof, Long> {
+    @EntityGraph(attributePaths = {"reimbursement", "uploadedBy"})
+    List<ExpenseProof> findByReimbursementIdOrderByUploadedAtAsc(Long reimbursementId);
+
+    @EntityGraph(attributePaths = {"reimbursement", "uploadedBy"})
+    Optional<ExpenseProof> findWithRelationsById(Long id);
+}

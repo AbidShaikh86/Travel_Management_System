@@ -1,0 +1,115 @@
+{
+  "schemaVersion": 2,
+  "generatedAt": "2026-11-25T08:19:00.000Z",
+  "title": "Design System: TravelDesk",
+  "extensions": {
+    "colorMeta": {
+      "emerald-teal": {
+        "role": "primary",
+        "displayName": "Emerald Teal",
+        "canonical": "#0F6B5E",
+        "tonalRamp": ["#062B26", "#093F37", "#0B5449", "#0F6B5E", "#148F7E", "#2DD4BF", "#99D5C9", "#E6F4F1"]
+      },
+      "alabaster-ground": {
+        "role": "neutral",
+        "displayName": "Alabaster Ground",
+        "canonical": "#F5F4EF",
+        "tonalRamp": ["#12171D", "#2E3640", "#4B5563", "#6E7784", "#C9C5B9", "#DFDDD4", "#ECEAE2", "#F5F4EF"]
+      },
+      "obsidian-ground": {
+        "role": "neutral",
+        "displayName": "Obsidian Ground",
+        "canonical": "#0D1116",
+        "tonalRamp": ["#0D1116", "#11161D", "#161D26", "#1C2530", "#26313F", "#374557", "#A9B4C2", "#EFF3F8"]
+      }
+    },
+    "typographyMeta": {
+      "display": { "displayName": "Display", "purpose": "Page headers across dashboard and feature views." },
+      "headline": { "displayName": "Headline", "purpose": "Modal titles and confirmation screens." },
+      "title": { "displayName": "Title", "purpose": "Card headers and section panel titles." },
+      "body": { "displayName": "Body", "purpose": "Form inputs, descriptions, and table data." },
+      "label": { "displayName": "Label", "purpose": "Table column headers and summary strip labels." },
+      "mono": { "displayName": "Monospace Data", "purpose": "Trip/claim IDs, department codes, and relative timestamps." }
+    },
+    "shadows": [
+      { "name": "surface-sm", "value": "0 2px 6px rgba(18, 23, 29, 0.05), 0 1px 2px rgba(18, 23, 29, 0.04)", "purpose": "Resting cards and table wrappers." },
+      { "name": "lift-md", "value": "0 8px 24px rgba(18, 23, 29, 0.08), 0 2px 6px rgba(18, 23, 29, 0.04)", "purpose": "Hovered KPI summary cards." },
+      { "name": "overlay-lg", "value": "0 18px 44px rgba(18, 23, 29, 0.14), 0 4px 12px rgba(18, 23, 29, 0.06)", "purpose": "Modal dialogs and toast alerts." }
+    ],
+    "motion": [
+      { "name": "ease-dispatch", "value": "cubic-bezier(0.16, 1, 0.3, 1)", "purpose": "Default deceleration for CSS transitions and GSAP power3.out arrivals." },
+      { "name": "gsap-tab-slide", "value": "240ms power3.out", "purpose": "Sliding segmented tab indicator across dashboard and approvals." },
+      { "name": "gsap-itinerary-track", "value": "450ms power3.out", "purpose": "Draws the departure-to-return route bar inside itinerary modals." }
+    ],
+    "breakpoints": [
+      { "name": "mobile", "value": "768px" },
+      { "name": "split-collapse", "value": "900px" },
+      { "name": "tablet", "value": "1024px" }
+    ]
+  },
+  "components": [
+    {
+      "name": "Primary Button",
+      "kind": "button",
+      "refersTo": "button-primary",
+      "description": "Primary operational action across forms, modals, and headers.",
+      "html": "<button class=\"ds-btn-primary\">Submit Travel Request</button>",
+      "css": ".ds-btn-primary { background: var(--accent, #0F6B5E); color: var(--accent-ink, #FFFFFF); padding: 9px 16px; border-radius: 6px; font-size: 13.5px; font-weight: 600; border: 1px solid transparent; cursor: pointer; transition: background-color 180ms cubic-bezier(0.16,1,0.3,1), transform 110ms ease; } .ds-btn-primary:hover { background: var(--accent-hover, #0B5449); } .ds-btn-primary:active { transform: scale(0.975); } .ds-btn-primary:focus-visible { outline: 2px solid var(--accent, #0F6B5E); outline-offset: 2px; }"
+    },
+    {
+      "name": "Secondary Button",
+      "kind": "button",
+      "refersTo": "button-secondary",
+      "description": "Supporting action such as Save as Draft or Itinerary preview.",
+      "html": "<button class=\"ds-btn-secondary\">Itinerary</button>",
+      "css": ".ds-btn-secondary { background: var(--surface, #FFFFFF); color: var(--text-primary, #12171D); padding: 9px 16px; border-radius: 6px; font-size: 13.5px; font-weight: 600; border: 1px solid var(--border, #DFDDD4); cursor: pointer; transition: background-color 180ms ease, border-color 180ms ease; } .ds-btn-secondary:hover { background: var(--surface-hover, #F7F6F1); border-color: var(--border-strong, #C9C5B9); }"
+    },
+    {
+      "name": "Ledger Card",
+      "kind": "card",
+      "refersTo": "card-surface",
+      "description": "Border-first container for department budgets, audit feeds, and forms.",
+      "html": "<div class=\"ds-card\"><div class=\"ds-card-title\">Department Budgets</div><p class=\"ds-card-sub\">Live allocations from database</p></div>",
+      "css": ".ds-card { background: var(--surface, #FFFFFF); border: 1px solid var(--border, #DFDDD4); border-radius: 14px; padding: 20px 22px; box-shadow: 0 2px 6px rgba(18,23,29,0.05); } .ds-card-title { font-size: 15px; font-weight: 700; color: var(--text-primary, #12171D); } .ds-card-sub { font-size: 12.5px; color: var(--text-muted, #6E7784); margin-top: 3px; }"
+    },
+    {
+      "name": "Input Field",
+      "kind": "input",
+      "refersTo": "input-field",
+      "description": "Form input with emerald-teal focus ring.",
+      "html": "<input class=\"ds-input\" type=\"text\" placeholder=\"e.g. Mumbai, Maharashtra\" />",
+      "css": ".ds-input { width: 100%; padding: 9px 12px; border: 1px solid var(--border, #DFDDD4); border-radius: 6px; font-size: 14px; color: var(--text-primary, #12171D); background: var(--surface, #FFFFFF); outline: none; transition: border-color 180ms ease, box-shadow 180ms ease; } .ds-input:focus { border-color: var(--accent, #0F6B5E); box-shadow: 0 0 0 3px var(--accent-light, #E6F4F1); }"
+    },
+    {
+      "name": "Status Badge",
+      "kind": "chip",
+      "description": "Semantic status indicator with dot marker.",
+      "html": "<span class=\"ds-badge\"><span class=\"ds-badge-dot\"></span>APPROVED</span>",
+      "css": ".ds-badge { display: inline-flex; align-items: center; gap: 5px; padding: 3px 10px; border-radius: 9999px; font-size: 11.5px; font-weight: 600; background: var(--success-bg, #E7F7EF); color: var(--success, #0E7A4E); border: 1px solid var(--success-border, #A8DFC4); } .ds-badge-dot { width: 6px; height: 6px; border-radius: 50%; background: currentColor; }"
+    }
+  ],
+  "narrative": {
+    "northStar": "The Dispatch Ledger",
+    "overview": "TravelDesk is an operational corporate travel and expense portal designed around the clarity of an institutional treasury ledger and flight-plan folio. The interface rejects generic purple-indigo SaaS gradients in favor of warm alabaster paper in daylight and crisp obsidian slate in dark mode, anchored by a deep emerald-teal action voice.\n\nBoth themes prioritize fast queue scanning across four distinct roles (Employee, Manager, Finance, Admin). GSAP motion acts as spatial feedback — sliding segmented tab indicators, animated budget progress bars, smooth modal sheets, and drawn itinerary route tracks — while keeping content immediately visible and honoring prefers-reduced-motion.",
+    "keyCharacteristics": [
+      "User-toggleable light ([data-theme=\"light\"]) and dark ([data-theme=\"dark\"]) themes persisted in localStorage.",
+      "Architectural summary strips and 3-column KPI bands paired with unified filter/search toolbars.",
+      "Tabular numeric alignment (tabular-nums) and JetBrains Mono reserved strictly for IDs, department codes, and timestamps.",
+      "Non-blocking GSAP choreography (power3.out, 180-320ms) with instant reduced-motion alternatives."
+    ],
+    "rules": [
+      { "name": "The Semantic-Only Status Rule", "body": "Amber, burgundy, cobalt, and emerald status colors appear exclusively on badges, policy flags, and utilization thresholds — never as decorative backgrounds.", "section": "colors" },
+      { "name": "The Border-First Rule", "body": "Containment relies on 1px tonal borders (--border) rather than heavy drop shadows so dark and light modes share identical spatial hierarchy.", "section": "elevation" }
+    ],
+    "dos": [
+      "Do use CSS custom properties (var(--surface), var(--text-primary), var(--border)) for every component state so both light and dark themes stay legible.",
+      "Do animate state transitions (tab switches, modals, inline drawers, itinerary route lines) with GSAP helpers from gsap.animations.ts and respect prefersReducedMotion().",
+      "Do use tabular-nums (.num) for every currency value, day count, percentage, and date column."
+    ],
+    "donts": [
+      "Don't place one-sided border-left accent bars on rounded cards; use full borders, soft tinted badges, or leading icons.",
+      "Don't use raw browser alert() dialogs for API errors or confirmations; route notifications through ToastService.",
+      "Don't hardcode light-mode hex colors (#fafbfc, #fff) inside component stylesheets."
+    ]
+  }
+}
