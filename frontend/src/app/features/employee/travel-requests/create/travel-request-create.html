@@ -13,16 +13,16 @@
       </p>
     </div>
     <div class="page-actions">
-      <a routerLink="/dashboard/my-requests" class="btn btn-secondary btn-sm">Cancel</a>
+      <a mat-stroked-button routerLink="/dashboard/my-requests">Cancel</a>
     </div>
   </header>
 
   @if (loadingDraft()) {
-    <div class="loading-wrap"><div class="spinner"></div></div>
+    <div class="loading-wrap"><mat-spinner diameter="32" /></div>
   } @else if (loadError()) {
     <div class="alert alert-danger row-between">
       <span>{{ loadError() }}</span>
-      <a routerLink="/dashboard/my-requests" class="btn btn-secondary btn-sm">Back to My Requests</a>
+      <a mat-stroked-button routerLink="/dashboard/my-requests">Back to My Requests</a>
     </div>
   } @else {
   <div class="create-layout">
@@ -31,36 +31,25 @@
         <section class="form-section">
           <h2 class="section-heading">Route &amp; Schedule</h2>
           <div class="flex-col gap-4">
-            <div class="form-group">
-              <label class="form-label" for="destination">Destination <span class="req">*</span></label>
-              <input id="destination" type="text" class="form-control"
-                     [class.invalid]="hasError('destination')"
-                     formControlName="destination"
-                     placeholder="e.g. Mumbai, Maharashtra"
-                     maxlength="150" />
-              @if (hasError('destination', 'required')) { <span class="form-error">Destination is required</span> }
-              @if (hasError('destination', 'maxlength')) { <span class="form-error">Destination cannot exceed 150 characters</span> }
-            </div>
+            <mat-form-field appearance="outline">
+              <mat-label>Destination</mat-label>
+              <input matInput id="destination" type="text" formControlName="destination" placeholder="e.g. Mumbai, Maharashtra" maxlength="150" required />
+              @if (hasError('destination', 'required')) { <mat-error>Destination is required</mat-error> }
+              @if (hasError('destination', 'maxlength')) { <mat-error>Destination cannot exceed 150 characters</mat-error> }
+            </mat-form-field>
 
             <div class="form-row">
-              <div class="form-group">
-                <label class="form-label" for="travelStartDate">Departure Date <span class="req">*</span></label>
-                <input id="travelStartDate" type="date" class="form-control"
-                       [class.invalid]="hasError('travelStartDate')"
-                       formControlName="travelStartDate"
-                       [min]="today" />
-                @if (hasError('travelStartDate', 'required')) { <span class="form-error">Start date is required</span> }
-              </div>
+              <mat-form-field appearance="outline" floatLabel="always">
+                <mat-label>Departure Date</mat-label>
+                <input matInput id="travelStartDate" type="date" formControlName="travelStartDate" [min]="today" required />
+                @if (hasError('travelStartDate', 'required')) { <mat-error>Start date is required</mat-error> }
+              </mat-form-field>
 
-              <div class="form-group">
-                <label class="form-label" for="stay">Stay Duration (Days) <span class="req">*</span></label>
-                <input id="stay" type="number" class="form-control"
-                       [class.invalid]="hasError('stay')"
-                       formControlName="stay"
-                       min="1"
-                       placeholder="e.g. 3" />
-                @if (hasError('stay', 'min')) { <span class="form-error">Minimum 1 day required</span> }
-              </div>
+              <mat-form-field appearance="outline">
+                <mat-label>Stay Duration (Days)</mat-label>
+                <input matInput id="stay" type="number" class="num" formControlName="stay" min="1" placeholder="e.g. 3" required />
+                @if (hasError('stay', 'min')) { <mat-error>Minimum 1 day required</mat-error> }
+              </mat-form-field>
             </div>
           </div>
         </section>
@@ -69,47 +58,43 @@
           <h2 class="section-heading">Transport &amp; Budget</h2>
           <div class="flex-col gap-4">
             <div class="form-row">
-              <div class="form-group">
-                <label class="form-label" for="estimatedBudget">Estimated Budget (₹) <span class="req">*</span></label>
-                <input id="estimatedBudget" type="number" class="form-control"
-                       [class.invalid]="hasError('estimatedBudget')"
-                       formControlName="estimatedBudget"
-                       min="1"
-                       placeholder="e.g. 12000" />
-                @if (hasError('estimatedBudget', 'required')) { <span class="form-error">Estimated budget is required</span> }
-                @if (hasError('estimatedBudget', 'min')) { <span class="form-error">Budget must be a positive number</span> }
-              </div>
+              <mat-form-field appearance="outline">
+                <mat-label>Estimated Budget (&#8377;)</mat-label>
+                <input matInput id="estimatedBudget" type="number" class="num" formControlName="estimatedBudget" min="1" placeholder="e.g. 12000" required />
+                @if (hasError('estimatedBudget', 'required')) { <mat-error>Estimated budget is required</mat-error> }
+                @if (hasError('estimatedBudget', 'min')) { <mat-error>Budget must be a positive number</mat-error> }
+              </mat-form-field>
 
-              <div class="form-group">
-                <label class="form-label" for="travelMode">Mode of Transport <span class="req">*</span></label>
-                <select id="travelMode" class="form-control" formControlName="travelMode" (change)="onTravelModeChange($any($event.target).value)">
+              <mat-form-field appearance="outline">
+                <mat-label>Mode of Transport</mat-label>
+                <mat-select formControlName="travelMode" (selectionChange)="onTravelModeChange($event.value)" required>
                   @for (m of travelModes; track m.value) {
-                    <option [value]="m.value">{{ m.label }}</option>
+                    <mat-option [value]="m.value">{{ m.label }}</mat-option>
                   }
-                </select>
-              </div>
+                </mat-select>
+              </mat-form-field>
             </div>
 
             @if (currentTravelMode === 'FLIGHT') {
-              <div class="form-group">
-                <label class="form-label" for="travelClassFlight">Flight Class <span class="req">*</span></label>
-                <select id="travelClassFlight" class="form-control" formControlName="travelClass">
+              <mat-form-field appearance="outline">
+                <mat-label>Flight Class</mat-label>
+                <mat-select formControlName="travelClass" required>
                   @for (c of flightClasses; track c.value) {
-                    <option [value]="c.value">{{ c.label }}</option>
+                    <mat-option [value]="c.value">{{ c.label }}</mat-option>
                   }
-                </select>
-                <span class="form-hint">Choose between commercial Economy or pre-approved Business class flight.</span>
-              </div>
+                </mat-select>
+                <mat-hint>Choose between commercial Economy or pre-approved Business class flight.</mat-hint>
+              </mat-form-field>
             } @else if (currentTravelMode === 'TRAIN') {
-              <div class="form-group">
-                <label class="form-label" for="travelClassTrain">Train Booking Class <span class="req">*</span></label>
-                <select id="travelClassTrain" class="form-control" formControlName="travelClass">
+              <mat-form-field appearance="outline">
+                <mat-label>Train Booking Class</mat-label>
+                <mat-select formControlName="travelClass" required>
                   @for (c of trainClasses; track c.value) {
-                    <option [value]="c.value">{{ c.label }}</option>
+                    <mat-option [value]="c.value">{{ c.label }}</mat-option>
                   }
-                </select>
-                <span class="form-hint">Select railway berth tier per department entitlement guidelines.</span>
-              </div>
+                </mat-select>
+                <mat-hint>Select railway berth tier per department entitlement guidelines.</mat-hint>
+              </mat-form-field>
             } @else if (currentTravelMode === 'OWN_VEHICLE') {
               <div class="alert alert-info" style="font-size:13px">
                 <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="flex-shrink:0;margin-top:2px">
@@ -127,38 +112,27 @@
         <section class="form-section last">
           <h2 class="section-heading">Purpose &amp; Policy Justification</h2>
           <div class="flex-col gap-4">
-            <div class="form-group">
-              <label class="form-label" for="purpose">Purpose of Travel <span class="req">*</span></label>
-              <textarea id="purpose" class="form-control"
-                        [class.invalid]="hasError('purpose')"
-                        formControlName="purpose"
-                        rows="3"
-                        maxlength="255"
-                        placeholder="e.g. Client presentation, project kickoff, or onsite sprint review..."></textarea>
-              @if (hasError('purpose', 'required')) { <span class="form-error">Purpose is required (max 255 chars)</span> }
-            </div>
+            <mat-form-field appearance="outline">
+              <mat-label>Purpose of Travel</mat-label>
+              <textarea matInput id="purpose" formControlName="purpose" rows="3" maxlength="255" placeholder="e.g. Client presentation, project kickoff, or onsite sprint review..." required></textarea>
+              @if (hasError('purpose', 'required')) { <mat-error>Purpose is required (max 255 chars)</mat-error> }
+            </mat-form-field>
 
-            <div class="form-group">
-              <label class="form-label" for="justification">
-                Policy Justification
-                @if (isPolicyViolationSuspected()) { <span class="req">(Recommended)</span> }
-              </label>
-              <textarea id="justification" class="form-control"
-                        formControlName="justification"
-                        rows="2"
-                        placeholder="Provide business justification if exceeding limits or requesting premium travel class..."></textarea>
-              <span class="form-hint">Captured in travel policy compliance audit if request triggers budget or class flags.</span>
-            </div>
+            <mat-form-field appearance="outline">
+              <mat-label>Policy Justification {{ isPolicyViolationSuspected() ? '(Recommended)' : '(Optional)' }}</mat-label>
+              <textarea matInput id="justification" formControlName="justification" rows="2" placeholder="Provide business justification if exceeding limits or requesting premium travel class..."></textarea>
+              <mat-hint>Captured in travel policy compliance audit if request triggers budget or class flags.</mat-hint>
+            </mat-form-field>
           </div>
         </section>
       </div>
 
       <div class="card-footer">
-        <button type="button" class="btn btn-secondary btn-sm" (click)="submit(true)" [disabled]="submitting">
+        <button mat-stroked-button type="button" (click)="submit(true)" [disabled]="submitting">
           {{ isEditMode() ? 'Save Draft Changes' : 'Save as Draft' }}
         </button>
-        <button type="submit" class="btn btn-primary btn-sm" [disabled]="submitting">
-          @if (submitting) { <span class="spinner" style="border-top-color:currentColor"></span> }
+        <button mat-flat-button color="primary" type="submit" [disabled]="submitting">
+          @if (submitting) { <mat-spinner diameter="16" /> }
           Submit Travel Request
         </button>
       </div>

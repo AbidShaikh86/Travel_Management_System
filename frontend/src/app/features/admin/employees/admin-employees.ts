@@ -1,6 +1,11 @@
 import { Component, AfterViewInit, inject, ChangeDetectionStrategy, signal, computed, OnInit } from "@angular/core";
 import { ReactiveFormsModule, FormBuilder, Validators, FormsModule } from "@angular/forms";
 import { HttpClient } from "@angular/common/http";
+import { MatButtonModule } from "@angular/material/button";
+import { MatFormFieldModule } from "@angular/material/form-field";
+import { MatInputModule } from "@angular/material/input";
+import { MatSelectModule } from "@angular/material/select";
+import { MatProgressSpinnerModule } from "@angular/material/progress-spinner";
 import { ToastService } from "../../../core/service/toast.service";
 import { NotFoundComponent } from "../../../shared/components/not-found/not-found";
 import { extractApiErrorMessage, isBackendOfflineError } from "../../../core/utils/http-error.util";
@@ -32,7 +37,16 @@ export interface ManagerDD {
 
 @Component({
   selector: "app-admin-employees",
-  imports: [ReactiveFormsModule, FormsModule, NotFoundComponent],
+  imports: [
+    ReactiveFormsModule,
+    FormsModule,
+    NotFoundComponent,
+    MatButtonModule,
+    MatFormFieldModule,
+    MatInputModule,
+    MatSelectModule,
+    MatProgressSpinnerModule
+  ],
   templateUrl: "./admin-employees.html",
   styleUrl: "./admin-employees.css",
   changeDetection: ChangeDetectionStrategy.OnPush
@@ -224,6 +238,7 @@ export class AdminEmployeesComponent implements AfterViewInit, OnInit {
     this.loadDepartments();
     this.loadManagers();
     this.showModal = true;
+    this.form.get("role")?.enable();
     this.form.get("password")?.setValidators([Validators.required, Validators.minLength(6)]);
     this.form.get("password")?.updateValueAndValidity();
     const initialDeptId = this.departments[0]?.id ?? null;
@@ -251,6 +266,7 @@ export class AdminEmployeesComponent implements AfterViewInit, OnInit {
     this.loadManagers();
     this.showModal = true;
 
+    this.form.get("role")?.disable();
     this.form.get("password")?.clearValidators();
     this.form.get("password")?.updateValueAndValidity();
 
@@ -334,17 +350,18 @@ export class AdminEmployeesComponent implements AfterViewInit, OnInit {
     }
     this._submitting.set(true);
 
-    const rawDeptId = this.form.value.departmentId;
-    const rawMgrId = this.form.value.managerId;
+    const rawValues = this.form.getRawValue();
+    const rawDeptId = rawValues.departmentId;
+    const rawMgrId = rawValues.managerId;
 
     if (this.isEditMode()) {
       const empId = this.editingEmployeeId();
       const updatePayload = {
-        name: this.form.value.name,
-        age: this.form.value.age ? Number(this.form.value.age) : null,
-        gender: this.form.value.gender,
-        email: this.form.value.email,
-        designation: this.form.value.designation,
+        name: rawValues.name,
+        age: rawValues.age ? Number(rawValues.age) : null,
+        gender: rawValues.gender,
+        email: rawValues.email,
+        designation: rawValues.designation,
         departmentId: rawDeptId ? Number(rawDeptId) : null,
         managerId: rawMgrId ? Number(rawMgrId) : null
       };
@@ -374,15 +391,15 @@ export class AdminEmployeesComponent implements AfterViewInit, OnInit {
       });
     } else {
       const payload = {
-        name: this.form.value.name,
-        age: this.form.value.age ? Number(this.form.value.age) : null,
-        gender: this.form.value.gender,
-        email: this.form.value.email,
-        designation: this.form.value.designation,
-        role: this.form.value.role,
+        name: rawValues.name,
+        age: rawValues.age ? Number(rawValues.age) : null,
+        gender: rawValues.gender,
+        email: rawValues.email,
+        designation: rawValues.designation,
+        role: rawValues.role,
         departmentId: rawDeptId ? Number(rawDeptId) : null,
         managerId: rawMgrId ? Number(rawMgrId) : null,
-        password: this.form.value.password
+        password: rawValues.password
       };
 
       this.http.post<any>("http://localhost:6969/api/admin/add-employee", payload).subscribe({

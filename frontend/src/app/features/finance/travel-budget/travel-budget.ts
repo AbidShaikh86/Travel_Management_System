@@ -16,6 +16,11 @@ import { ReactiveFormsModule, FormBuilder, Validators } from "@angular/forms";
 import { HttpClient, HttpErrorResponse } from "@angular/common/http";
 import { fromEvent } from "rxjs";
 import { takeUntilDestroyed } from "@angular/core/rxjs-interop";
+import { MatButtonModule } from "@angular/material/button";
+import { MatFormFieldModule } from "@angular/material/form-field";
+import { MatInputModule } from "@angular/material/input";
+import { MatSelectModule } from "@angular/material/select";
+import { MatProgressSpinnerModule } from "@angular/material/progress-spinner";
 import { ToastService } from "../../../core/service/toast.service";
 import { NotFoundComponent } from "../../../shared/components/not-found/not-found";
 import { extractApiErrorMessage, isBackendOfflineError } from "../../../core/utils/http-error.util";
@@ -24,6 +29,7 @@ import {
   animateInspectorSwap,
   animatePageIn,
   animateStagger,
+  animateSummaryStrip,
   animateTabIndicator
 } from "../../../shared/animations/gsap.animations";
 
@@ -75,7 +81,15 @@ export type BudgetTab = "ALL" | "APPROVED" | "PENDING" | "FLAGGED" | "COMPLETED"
 
 @Component({
   selector: "app-travel-budget",
-  imports: [ReactiveFormsModule, NotFoundComponent],
+  imports: [
+    ReactiveFormsModule,
+    NotFoundComponent,
+    MatButtonModule,
+    MatFormFieldModule,
+    MatInputModule,
+    MatSelectModule,
+    MatProgressSpinnerModule
+  ],
   templateUrl: "./travel-budget.html",
   styleUrl: "./travel-budget.css",
   changeDetection: ChangeDetectionStrategy.OnPush
@@ -221,7 +235,10 @@ export class TravelBudgetComponent implements OnInit {
     afterNextRender(() => {
       this.syncTabIndicator(true);
       const root = this.rootRef()?.nativeElement;
-      if (root) animatePageIn(root);
+      if (root) {
+        animatePageIn(root);
+        animateSummaryStrip(root.querySelectorAll(".summary-cell"));
+      }
       this.animateRows();
     }, { injector: this.injector });
   }
@@ -260,7 +277,12 @@ export class TravelBudgetComponent implements OnInit {
 
   canModifyBudget(item: FinanceTravelItem): boolean {
     const managerApproved = (item.managerApproval || "").toUpperCase() === "APPROVED";
-    const finalized = item.status === "COMPLETED" || item.status === "CANCELLED";
+    const status = (item.status || "").toUpperCase();
+    const finalized =
+      status === "APPROVED" ||
+      status === "REJECTED" ||
+      status === "COMPLETED" ||
+      status === "CANCELLED";
     return managerApproved && !finalized;
   }
 

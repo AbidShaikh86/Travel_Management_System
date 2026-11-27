@@ -17,6 +17,10 @@ import { HttpClient } from "@angular/common/http";
 import { DomSanitizer, SafeResourceUrl } from "@angular/platform-browser";
 import { fromEvent } from "rxjs";
 import { takeUntilDestroyed } from "@angular/core/rxjs-interop";
+import { MatButtonModule } from "@angular/material/button";
+import { MatFormFieldModule } from "@angular/material/form-field";
+import { MatInputModule } from "@angular/material/input";
+import { MatProgressSpinnerModule } from "@angular/material/progress-spinner";
 import { ToastService } from "../../../core/service/toast.service";
 import { NotFoundComponent } from "../../../shared/components/not-found/not-found";
 import { extractApiErrorMessage, isBackendOfflineError } from "../../../core/utils/http-error.util";
@@ -25,6 +29,7 @@ import {
   animateInspectorSwap,
   animatePageIn,
   animateStagger,
+  animateSummaryStrip,
   animateTabIndicator
 } from "../../../shared/animations/gsap.animations";
 
@@ -33,6 +38,7 @@ export interface FinanceExpenseItem {
   category: string;
   amount: number;
   proofFileName: string | null;
+  proofUrl?: string | null;
   displayFileName?: string | null;
   createdAt: string | null;
 }
@@ -54,7 +60,13 @@ export type ClaimTab = "ALL" | "PENDING" | "APPROVED" | "PAID" | "REJECTED";
 
 @Component({
   selector: "app-finance-reimbursements",
-  imports: [NotFoundComponent],
+  imports: [
+    NotFoundComponent,
+    MatButtonModule,
+    MatFormFieldModule,
+    MatInputModule,
+    MatProgressSpinnerModule
+  ],
   templateUrl: "./finance-reimbursements.html",
   styleUrl: "./finance-reimbursements.css",
   changeDetection: ChangeDetectionStrategy.OnPush
@@ -70,6 +82,7 @@ export class FinanceReimbursementsComponent implements OnInit, OnDestroy {
   readonly tabIndicator = viewChild<ElementRef<HTMLElement>>("tabIndicator");
   readonly tabButtons = viewChildren<ElementRef<HTMLButtonElement>>("tabBtn");
   readonly panelRef = viewChild<ElementRef<HTMLElement>>("panelRef");
+  readonly proofViewerRef = viewChild<ElementRef<HTMLElement>>("proofViewer");
 
   readonly itemsSignal = signal<FinanceClaimItem[]>([]);
   readonly activeTab = signal<ClaimTab>("ALL");
@@ -193,7 +206,10 @@ export class FinanceReimbursementsComponent implements OnInit, OnDestroy {
     afterNextRender(() => {
       this.syncTabIndicator(true);
       const root = this.rootRef()?.nativeElement;
-      if (root) animatePageIn(root);
+      if (root) {
+        animatePageIn(root);
+        animateSummaryStrip(root.querySelectorAll(".summary-cell"));
+      }
       this.animateRows();
     }, { injector: this.injector });
   }
@@ -266,16 +282,25 @@ export class FinanceReimbursementsComponent implements OnInit, OnDestroy {
 
         const mergedExpenses: FinanceExpenseItem[] = (detail.expenses ?? []).map((exp) => {
           const prev = existingExpenses.get(exp.id);
+          const rawProofUrl = exp.proofUrl ?? prev?.proofUrl ?? null;
           const detailProof = exp.proofFileName;
           const hasPath = Boolean(
             detailProof && (/^https?:\/\//i.test(detailProof) || detailProof.includes("/"))
           );
+          const resolvedProofUrl =
+            rawProofUrl ||
+            (hasPath
+              ? detailProof
+              : prev?.proofFileName && (/^https?:\/\//i.test(prev.proofFileName) || prev.proofFileName.includes("/"))
+                ? prev.proofFileName
+                : null);
           const resolvedProof = hasPath
             ? detailProof
             : prev?.proofFileName ?? detailProof;
 
           return {
             ...exp,
+            proofUrl: resolvedProofUrl,
             proofFileName: resolvedProof,
             displayFileName: detailProof && !hasPath ? detailProof : prev?.displayFileName ?? null
           };
@@ -363,7 +388,8 @@ export class FinanceReimbursementsComponent implements OnInit, OnDestroy {
   }
 
   inspectProof(claimId: number, expense: FinanceExpenseItem) {
-    if (!expense.proofFileName) return;
+    const source = this.proofSource(expense);
+    if (!source) return;
 
     if (this.previewExpense()?.id === expense.id && (this.previewSafeUrl() || this.previewLoading())) {
       this.clearPreview();
@@ -374,29 +400,35 @@ export class FinanceReimbursementsComponent implements OnInit, OnDestroy {
     this.previewExpense.set(expense);
     this.previewLoading.set(true);
     this.previewError.set(null);
+    this.scrollProofViewerIntoView();
 
-    const url = this.resolveProofUrl(claimId, expense.proofFileName);
+    const url = this.resolveProofUrl(claimId, source);
 
     this.http.get(url, { responseType: "blob" }).subscribe({
       next: (blob) => {
+        if (this.previewExpense()?.id !== expense.id) return;
         this.previewLoading.set(false);
-        const objectUrl = URL.createObjectURL(blob);
+
+        const normalizedBlob = this.normalizeProofBlob(blob, expense);
+        const objectUrl = URL.createObjectURL(normalizedBlob);
         this.activeObjectUrl = objectUrl;
 
-        const mime = (blob.type || "").toLowerCase();
-        const lowerName = (expense.proofFileName || "").toLowerCase();
+        const mime = (normalizedBlob.type || "").toLowerCase();
+        const lowerName = `${expense.displayFileName || ""} ${expense.proofFileName || ""} ${expense.proofUrl || ""}`.toLowerCase();
 
-        if (mime.startsWith("image/") || /\.(png|jpe?g|webp|gif)$/i.test(lowerName)) {
+        if (mime.startsWith("image/") || /\.(png|jpe?g|webp|gif)(\?|#|$)/i.test(lowerName)) {
           this.previewKind.set("image");
-        } else if (mime === "application/pdf" || lowerName.endsWith(".pdf")) {
+        } else if (mime === "application/pdf" || /\.pdf(\?|#|$)/i.test(lowerName)) {
           this.previewKind.set("pdf");
         } else {
           this.previewKind.set("other");
         }
 
         this.previewSafeUrl.set(this.sanitizer.bypassSecurityTrustResourceUrl(objectUrl));
+        this.scrollProofViewerIntoView();
       },
       error: (err) => {
+        if (this.previewExpense()?.id !== expense.id) return;
         this.previewLoading.set(false);
         this.previewError.set(extractApiErrorMessage(err, "Unable to load receipt proof."));
       }
@@ -404,24 +436,117 @@ export class FinanceReimbursementsComponent implements OnInit, OnDestroy {
   }
 
   openProofInNewTab(claimId: number, expense: FinanceExpenseItem) {
-    if (!expense.proofFileName) return;
+    const source = this.proofSource(expense);
+    if (!source) return;
+
+    const fileName = this.proofDownloadName(expense);
 
     if (this.previewExpense()?.id === expense.id && this.activeObjectUrl) {
-      window.open(this.activeObjectUrl, "_blank", "noopener");
+      const opened = typeof window !== "undefined" ? window.open(this.activeObjectUrl, "_blank", "noopener") : null;
+      if (!opened) {
+        this.triggerBlobDownload(this.activeObjectUrl, fileName);
+      }
       return;
     }
 
-    const url = this.resolveProofUrl(claimId, expense.proofFileName);
+    const pendingTab = typeof window !== "undefined" ? window.open("", "_blank") : null;
+    if (pendingTab) {
+      pendingTab.opener = null;
+    }
+
+    const url = this.resolveProofUrl(claimId, source);
     this.http.get(url, { responseType: "blob" }).subscribe({
       next: (blob) => {
-        const objectUrl = URL.createObjectURL(blob);
-        window.open(objectUrl, "_blank", "noopener");
+        const normalizedBlob = this.normalizeProofBlob(blob, expense);
+        const objectUrl = URL.createObjectURL(normalizedBlob);
+
+        if (pendingTab && !pendingTab.closed) {
+          pendingTab.location.href = objectUrl;
+        } else {
+          const opened = typeof window !== "undefined" ? window.open(objectUrl, "_blank", "noopener") : null;
+          if (!opened) {
+            this.triggerBlobDownload(objectUrl, fileName);
+          }
+        }
         setTimeout(() => URL.revokeObjectURL(objectUrl), 60_000);
       },
       error: (err) => {
+        if (pendingTab && !pendingTab.closed) {
+          pendingTab.close();
+        }
         this.toast.error(extractApiErrorMessage(err, "Failed to open receipt file."));
       }
     });
+  }
+
+  downloadProof(claimId: number, expense: FinanceExpenseItem) {
+    const source = this.proofSource(expense);
+    if (!source) return;
+
+    const fileName = this.proofDownloadName(expense);
+
+    if (this.previewExpense()?.id === expense.id && this.activeObjectUrl) {
+      this.triggerBlobDownload(this.activeObjectUrl, fileName);
+      return;
+    }
+
+    const url = this.resolveProofUrl(claimId, source);
+    this.http.get(url, { responseType: "blob" }).subscribe({
+      next: (blob) => {
+        const normalizedBlob = this.normalizeProofBlob(blob, expense);
+        const objectUrl = URL.createObjectURL(normalizedBlob);
+        this.triggerBlobDownload(objectUrl, fileName);
+        setTimeout(() => URL.revokeObjectURL(objectUrl), 60_000);
+      },
+      error: (err) => {
+        this.toast.error(extractApiErrorMessage(err, "Failed to download receipt file."));
+      }
+    });
+  }
+
+  private proofSource(expense: FinanceExpenseItem): string | null {
+    return expense.proofUrl || expense.proofFileName || null;
+  }
+
+  private proofDownloadName(expense: FinanceExpenseItem): string {
+    return this.proofDisplayName(expense.displayFileName || expense.proofFileName || expense.proofUrl || `receipt-${expense.id}`);
+  }
+
+  private normalizeProofBlob(blob: Blob, expense: FinanceExpenseItem): Blob {
+    const mime = (blob.type || "").toLowerCase();
+    if (mime && mime !== "application/octet-stream") {
+      return blob;
+    }
+
+    const lower = `${expense.displayFileName || ""} ${expense.proofFileName || ""} ${expense.proofUrl || ""}`.toLowerCase();
+    let inferred = "";
+    if (/\.pdf(\?|#|$)/i.test(lower)) inferred = "application/pdf";
+    else if (/\.png(\?|#|$)/i.test(lower)) inferred = "image/png";
+    else if (/\.jpe?g(\?|#|$)/i.test(lower)) inferred = "image/jpeg";
+    else if (/\.webp(\?|#|$)/i.test(lower)) inferred = "image/webp";
+    else if (/\.gif(\?|#|$)/i.test(lower)) inferred = "image/gif";
+
+    return inferred ? new Blob([blob], { type: inferred }) : blob;
+  }
+
+  private triggerBlobDownload(objectUrl: string, fileName: string) {
+    if (typeof document === "undefined") return;
+    const link = document.createElement("a");
+    link.href = objectUrl;
+    link.download = fileName;
+    link.style.display = "none";
+    document.body.appendChild(link);
+    link.click();
+    link.remove();
+  }
+
+  private scrollProofViewerIntoView() {
+    afterNextRender(() => {
+      const el = this.proofViewerRef()?.nativeElement;
+      if (el && typeof el.scrollIntoView === "function") {
+        el.scrollIntoView({ behavior: "smooth", block: "nearest" });
+      }
+    }, { injector: this.injector });
   }
 
   clearPreview() {

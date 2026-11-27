@@ -13,6 +13,7 @@
     </div>
 
     <button
+      mat-stroked-button
       type="button"
       class="login-theme-btn"
       (click)="toggleTheme()"
@@ -52,16 +53,16 @@
         </div>
 
         <svg class="manifest-arc-svg" viewBox="0 0 480 76" fill="none">
-          <line x1="24" y1="54" x2="456" y2="54" stroke="rgba(148,163,184,0.24)" stroke-width="1.5" stroke-dasharray="4 4"/>
+          <line x1="24" y1="54" x2="456" y2="54" stroke="rgba(153,213,201,0.24)" stroke-width="1.5" stroke-dasharray="4 4"/>
           <path
             class="manifest-arc-path"
             d="M24 54 C 120 12, 200 12, 240 54 C 280 12, 360 12, 456 54"
-            stroke="#60A5FA"
+            stroke="#2DD4BF"
             stroke-width="2.2"
             stroke-linecap="round"/>
           <circle cx="24" cy="54" r="5" fill="#F97316"/>
-          <circle cx="168" cy="24" r="4" fill="#60A5FA"/>
-          <circle cx="312" cy="24" r="4" fill="#60A5FA"/>
+          <circle cx="168" cy="24" r="4" fill="#2DD4BF"/>
+          <circle cx="312" cy="24" r="4" fill="#2DD4BF"/>
           <circle cx="456" cy="54" r="5" fill="#34D399"/>
         </svg>
 
@@ -83,7 +84,7 @@
     </section>
 
     <section class="login-folio-pane">
-      <div class="login-card" #card>
+      <mat-card class="login-card" appearance="outlined" #card>
         <div class="login-card-header">
           <h2>Sign in to TravelDesk</h2>
           <p>Enter your corporate credentials to open your workspace.</p>
@@ -98,39 +99,33 @@
           </div>
         }
 
-        <form [formGroup]="form" (ngSubmit)="submit()" novalidate>
-          <div class="form-group">
-            <label class="form-label" for="email">Work Email <span class="req">*</span></label>
-            <input id="email" type="email" class="form-control"
-                   [class.invalid]="emailCtrl.invalid && emailCtrl.touched"
-                   formControlName="email" placeholder="you@company.com" autocomplete="email" />
+        <form [formGroup]="form" (ngSubmit)="submit()" novalidate class="login-form">
+          <mat-form-field appearance="outline">
+            <mat-label>Work Email</mat-label>
+            <input matInput id="email" type="email" formControlName="email" placeholder="you@company.com" autocomplete="email" required />
             @if (emailCtrl.invalid && emailCtrl.touched) {
-              <span class="form-error">{{ getError(emailCtrl) }}</span>
+              <mat-error>{{ getError(emailCtrl) }}</mat-error>
             }
-          </div>
+          </mat-form-field>
 
-          <div class="form-group" style="margin-top:16px">
-            <label class="form-label" for="password">Password <span class="req">*</span></label>
-            <div class="input-wrap">
-              <input id="password" [type]="showPassword() ? 'text' : 'password'" class="form-control"
-                     [class.invalid]="passCtrl.invalid && passCtrl.touched"
-                     formControlName="password" placeholder="Enter your password" autocomplete="current-password" />
-              <button type="button" class="eye-btn" (click)="togglePassword()" tabindex="-1" [attr.aria-label]="showPassword() ? 'Hide password' : 'Show password'">
-                @if (showPassword()) {
-                  <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M17.94 17.94A10.07 10.07 0 0112 20c-7 0-11-8-11-8a18.45 18.45 0 015.06-5.94M9.9 4.24A9.12 9.12 0 0112 4c7 0 11 8 11 8a18.5 18.5 0 01-2.16 3.19m-6.72-1.07a3 3 0 11-4.24-4.24"/><line x1="1" y1="1" x2="23" y2="23"/></svg>
-                } @else {
-                  <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></svg>
-                }
-              </button>
-            </div>
+          <mat-form-field appearance="outline">
+            <mat-label>Password</mat-label>
+            <input matInput id="password" [type]="showPassword() ? 'text' : 'password'" formControlName="password" placeholder="Enter your password" autocomplete="current-password" required />
+            <button mat-icon-button matSuffix type="button" (click)="togglePassword()" tabindex="-1" [attr.aria-label]="showPassword() ? 'Hide password' : 'Show password'">
+              @if (showPassword()) {
+                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M17.94 17.94A10.07 10.07 0 0112 20c-7 0-11-8-11-8a18.45 18.45 0 015.06-5.94M9.9 4.24A9.12 9.12 0 0112 4c7 0 11 8 11 8a18.5 18.5 0 01-2.16 3.19m-6.72-1.07a3 3 0 11-4.24-4.24"/><line x1="1" y1="1" x2="23" y2="23"/></svg>
+              } @else {
+                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></svg>
+              }
+            </button>
             @if (passCtrl.invalid && passCtrl.touched) {
-              <span class="form-error">{{ getError(passCtrl) }}</span>
+              <mat-error>{{ getError(passCtrl) }}</mat-error>
             }
-          </div>
+          </mat-form-field>
 
-          <button type="submit" class="btn btn-primary btn-lg w-full" style="margin-top:22px" [disabled]="loading()">
-            @if (loading()) { <span class="spinner" style="border-top-color:currentColor"></span> }
-            {{ loading() ? "Signing in..." : "Sign in" }}
+          <button mat-flat-button color="primary" type="submit" class="login-submit-btn" [disabled]="loading()">
+            @if (loading()) { <mat-spinner diameter="18" /> }
+            <span>{{ loading() ? "Signing in..." : "Sign in" }}</span>
           </button>
         </form>
 
@@ -140,7 +135,7 @@
           </svg>
           <span>Role-scoped JWT session</span>
         </div>
-      </div>
+      </mat-card>
     </section>
   </main>
 </div>

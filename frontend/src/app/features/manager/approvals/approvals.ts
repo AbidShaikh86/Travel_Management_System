@@ -18,6 +18,11 @@ import { HttpClient } from "@angular/common/http";
 import { fromEvent } from "rxjs";
 import { takeUntilDestroyed } from "@angular/core/rxjs-interop";
 import gsap from "gsap";
+import { MatButtonModule } from "@angular/material/button";
+import { MatFormFieldModule } from "@angular/material/form-field";
+import { MatInputModule } from "@angular/material/input";
+import { MatProgressSpinnerModule } from "@angular/material/progress-spinner";
+import { MatRippleModule } from "@angular/material/core";
 import {
   animateDrawerIn,
   animateInspectorSwap,
@@ -108,7 +113,16 @@ export type ApprovalTab = "PENDING" | "FLAGGED" | "HISTORY";
 
 @Component({
   selector: "app-approvals",
-  imports: [ReactiveFormsModule, RouterLink, NotFoundComponent],
+  imports: [
+    ReactiveFormsModule,
+    RouterLink,
+    NotFoundComponent,
+    MatButtonModule,
+    MatFormFieldModule,
+    MatInputModule,
+    MatProgressSpinnerModule,
+    MatRippleModule
+  ],
   templateUrl: "./approvals.html",
   styleUrl: "./approvals.css",
   changeDetection: ChangeDetectionStrategy.OnPush

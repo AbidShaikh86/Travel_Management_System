@@ -8,13 +8,15 @@ import {
 } from "@angular/core";
 import { ActivatedRoute, Router, RouterLink } from "@angular/router";
 import { toSignal } from "@angular/core/rxjs-interop";
+import { MatCardModule } from "@angular/material/card";
+import { MatButtonModule } from "@angular/material/button";
 import { AuthService } from "../../../core/service/auth.service";
 
 export type StatusPageMode = "not-found" | "offline";
 
 @Component({
   selector: "app-not-found",
-  imports: [RouterLink],
+  imports: [RouterLink, MatCardModule, MatButtonModule],
   templateUrl: "./not-found.html",
   styleUrl: "./not-found.css",
   changeDetection: ChangeDetectionStrategy.OnPush

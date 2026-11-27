@@ -4,6 +4,12 @@ import { FormsModule } from "@angular/forms";
 import { HttpClient } from "@angular/common/http";
 import { fromEvent } from "rxjs";
 import { takeUntilDestroyed } from "@angular/core/rxjs-interop";
+import { MatButtonModule } from "@angular/material/button";
+import { MatFormFieldModule } from "@angular/material/form-field";
+import { MatInputModule } from "@angular/material/input";
+import { MatSelectModule } from "@angular/material/select";
+import { MatProgressSpinnerModule } from "@angular/material/progress-spinner";
+import { MatRippleModule } from "@angular/material/core";
 import { NotFoundComponent } from "../../../../shared/components/not-found/not-found";
 import { extractApiErrorMessage, isBackendOfflineError } from "../../../../core/utils/http-error.util";
 import {
@@ -50,7 +56,17 @@ export interface TravelDetailApiResponse {
 
 @Component({
   selector: "app-travel-request-list",
-  imports: [RouterLink, FormsModule, NotFoundComponent],
+  imports: [
+    RouterLink,
+    FormsModule,
+    NotFoundComponent,
+    MatButtonModule,
+    MatFormFieldModule,
+    MatInputModule,
+    MatSelectModule,
+    MatProgressSpinnerModule,
+    MatRippleModule
+  ],
   templateUrl: "./travel-request-list.html",
   styleUrl: "./travel-request-list.css",
   changeDetection: ChangeDetectionStrategy.OnPush

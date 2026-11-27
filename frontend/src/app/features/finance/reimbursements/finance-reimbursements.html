@@ -54,18 +54,16 @@
       }
     </div>
 
-    <div class="search-field">
-      <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true">
-        <circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/>
-      </svg>
+    <mat-form-field appearance="outline" class="mat-field-compact" style="min-width:260px;max-width:340px">
+      <mat-label>Search reimbursement claims</mat-label>
       <input
+        matInput
         type="text"
-        class="search-input"
         aria-label="Search reimbursement claims"
-        placeholder="Search employee, claim #, or trip #..."
+        placeholder="Employee, claim #, or trip #..."
         [value]="searchQuery()"
         (input)="searchQuery.set($any($event.target).value)" />
-    </div>
+    </mat-form-field>
   </div>
 
   @if (loading()) {
@@ -246,7 +244,7 @@
                           <td><span class="pill">{{ e.category }}</span></td>
                           <td class="num mono" style="text-align:right"><strong>{{ formatCurrency(e.amount) }}</strong></td>
                           <td>
-                            @if (e.proofFileName) {
+                            @if (e.proofUrl || e.proofFileName) {
                               <div class="flex items-center gap-2">
                                 <button
                                   type="button"
@@ -260,8 +258,16 @@
                                   class="btn btn-ghost btn-sm"
                                   style="font-size:12px;padding:4px 8px"
                                   (click)="openProofInNewTab(claim.id, e)"
-                                  [title]="proofDisplayName(e.displayFileName || e.proofFileName)">
+                                  [title]="proofDisplayName(e.displayFileName || e.proofFileName || e.proofUrl)">
                                   Open
+                                </button>
+                                <button
+                                  type="button"
+                                  class="btn btn-ghost btn-sm"
+                                  style="font-size:12px;padding:4px 8px"
+                                  (click)="downloadProof(claim.id, e)"
+                                  [title]="'Download ' + proofDisplayName(e.displayFileName || e.proofFileName || e.proofUrl)">
+                                  Download
                                 </button>
                               </div>
                             } @else {
@@ -278,14 +284,17 @@
             </div>
 
             @if (previewExpense(); as activeProof) {
-              <div class="proof-viewer">
+              <div class="proof-viewer" #proofViewer>
                 <div class="proof-viewer-bar">
                   <span class="cell-primary" style="font-size:12.5px">
                     {{ activeProof.category }} &middot; {{ formatCurrency(activeProof.amount) }}
                   </span>
-                  <div class="flex items-center gap-2">
+                  <div class="flex items-center gap-2" style="flex-wrap:wrap">
                     <button type="button" class="btn btn-ghost btn-sm" (click)="openProofInNewTab(claim.id, activeProof)">
                       Open in Tab
+                    </button>
+                    <button type="button" class="btn btn-ghost btn-sm" (click)="downloadProof(claim.id, activeProof)">
+                      Download
                     </button>
                     <button type="button" class="btn btn-ghost btn-sm" (click)="clearPreview()">Close Preview</button>
                   </div>
@@ -305,8 +314,16 @@
                   } @else if (previewKind() === 'pdf') {
                     <iframe [src]="safeUrl" title="Receipt PDF preview" class="proof-pdf"></iframe>
                   } @else {
-                    <div class="card-body">
-                      <p class="cell-secondary">Preview not supported for this file format. Use "Open in Tab" to download or view.</p>
+                    <div class="card-body flex-col gap-3">
+                      <p class="cell-secondary">Preview not supported for this file format. Open it in a new tab or download the file.</p>
+                      <div class="flex items-center gap-2">
+                        <button type="button" class="btn btn-secondary btn-sm" (click)="openProofInNewTab(claim.id, activeProof)">
+                          Open in Tab
+                        </button>
+                        <button type="button" class="btn btn-primary btn-sm" (click)="downloadProof(claim.id, activeProof)">
+                          Download
+                        </button>
+                      </div>
                     </div>
                   }
                 }
@@ -315,26 +332,28 @@
           </div>
 
           <div class="inspector-footer">
-            <button type="button" class="btn btn-secondary btn-sm" (click)="close()">Close</button>
+            <button mat-stroked-button type="button" (click)="close()">Close</button>
 
             @if (claim.status === 'PENDING') {
               <button
+                mat-flat-button
+                color="warn"
                 type="button"
-                class="btn btn-danger btn-sm"
                 [disabled]="submittingDecision() !== null"
                 (click)="submitDecision('REJECTED')">
                 @if (submittingDecision() === 'REJECTED') {
-                  <span class="spinner" style="width:13px;height:13px;border-top-color:currentColor"></span>
+                  <mat-spinner diameter="15" />
                 }
                 Reject Claim
               </button>
               <button
+                mat-flat-button
+                color="primary"
                 type="button"
-                class="btn btn-primary btn-sm"
                 [disabled]="submittingDecision() !== null"
                 (click)="submitDecision('APPROVED')">
                 @if (submittingDecision() === 'APPROVED') {
-                  <span class="spinner" style="width:13px;height:13px;border-top-color:currentColor"></span>
+                  <mat-spinner diameter="15" />
                 }
                 Approve Claim
               </button>
@@ -342,12 +361,13 @@
 
             @if (claim.status === 'APPROVED') {
               <button
+                mat-flat-button
+                color="primary"
                 type="button"
-                class="btn btn-success btn-sm"
                 [disabled]="payingClaimId() === claim.id"
                 (click)="markPaid(claim, true)">
                 @if (payingClaimId() === claim.id) {
-                  <span class="spinner" style="width:13px;height:13px;border-top-color:currentColor"></span>
+                  <mat-spinner diameter="15" />
                 }
                 Confirm Payout (Mark as Paid)
               </button>

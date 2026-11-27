@@ -11,7 +11,7 @@
       <p class="page-subtitle">Review team travel requests and issue decisions inline without leaving the queue.</p>
     </div>
     <div class="page-actions">
-      <a routerLink="/dashboard/manager/request-travel" class="btn btn-primary btn-sm">
+      <a mat-flat-button color="primary" routerLink="/dashboard/manager/request-travel">
         <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true">
           <line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/>
         </svg>
@@ -65,18 +65,16 @@
     </div>
 
     @if (activeTab() !== 'HISTORY') {
-      <div class="search-field">
-        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true">
-          <circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/>
-        </svg>
+      <mat-form-field appearance="outline" class="mat-field-compact" style="min-width:260px;max-width:340px">
+        <mat-label>Filter requests</mat-label>
         <input
+          matInput
           type="text"
-          class="search-input"
           aria-label="Filter requests by employee or destination"
           placeholder="Filter by name or city..."
           [value]="searchQuery()"
           (input)="searchQuery.set($any($event.target).value)"/>
-      </div>
+      </mat-form-field>
     }
   </div>
 
@@ -239,26 +237,26 @@
                   @if (expandedId() === item.id) {
                     <div class="inline-drawer" [attr.data-drawer-id]="item.id">
                       <form [formGroup]="form" (ngSubmit)="confirm(item)" novalidate class="drawer-form">
-                        <div class="form-group" style="flex:1">
-                          <label class="form-label" [for]="'note-' + item.id">
+                        <mat-form-field appearance="outline" style="flex:1">
+                          <mat-label>
                             {{ actionType() === 'REJECTED' ? 'Reason for declining (required)' : 'Note for employee (optional)' }}
-                          </label>
+                          </mat-label>
                           <input
+                            matInput
                             [id]="'note-' + item.id"
                             type="text"
-                            class="form-control"
                             formControlName="comment"
-                            [class.invalid]="form.get('comment')!.invalid && form.get('comment')!.touched"
                             [placeholder]="actionType() === 'REJECTED' ? 'Minimum 5 characters...' : 'Add booking guidance or instructions...'"/>
                           @if (form.get('comment')!.invalid && form.get('comment')!.touched) {
-                            <span class="form-error">Please enter at least 5 characters explaining the decline.</span>
+                            <mat-error>Please enter at least 5 characters explaining the decline.</mat-error>
                           }
-                        </div>
+                        </mat-form-field>
                         <div class="drawer-actions">
-                          <button type="button" class="btn btn-ghost btn-sm" (click)="closeInlineAction()">Cancel</button>
+                          <button mat-button type="button" (click)="closeInlineAction()">Cancel</button>
                           <button
+                            mat-flat-button
+                            [color]="actionType() === 'APPROVED' ? 'primary' : 'warn'"
                             type="submit"
-                            [class]="actionType() === 'APPROVED' ? 'btn btn-primary btn-sm' : 'btn btn-danger btn-sm'"
                             [disabled]="submitting()">
                             {{ actionType() === 'APPROVED' ? 'Confirm Approval' : 'Confirm Decline' }}
                           </button>

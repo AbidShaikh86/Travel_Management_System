@@ -11,7 +11,7 @@
       <p class="page-subtitle">Submit, track, and inspect travel requests across your itineraries.</p>
     </div>
     <div class="page-actions">
-      <a routerLink="/dashboard/my-requests/new" class="btn btn-primary btn-sm">
+      <a mat-flat-button color="primary" routerLink="/dashboard/my-requests/new">
         <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true">
           <line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/>
         </svg>
@@ -40,37 +40,31 @@
   </section>
 
   <div class="controls-bar">
-    <div class="filter-inline">
-      <label for="travelStatusSelect" class="filter-label">Status</label>
-      <select id="travelStatusSelect" class="form-control filter-select" [(ngModel)]="selectedFilter">
-        <option value="ALL">All Statuses</option>
-        <option value="PENDING">PENDING</option>
-        <option value="APPROVED">APPROVED</option>
-        <option value="DRAFT">DRAFT</option>
-        <option value="REJECTED">REJECTED</option>
-        <option value="COMPLETED">COMPLETED</option>
-        <option value="CANCELLED">CANCELLED</option>
-      </select>
-    </div>
+    <mat-form-field appearance="outline" class="mat-field-compact" style="width:200px">
+      <mat-label>Status</mat-label>
+      <mat-select [(ngModel)]="selectedFilter">
+        <mat-option value="ALL">All Statuses</mat-option>
+        <mat-option value="PENDING">PENDING</mat-option>
+        <mat-option value="APPROVED">APPROVED</mat-option>
+        <mat-option value="DRAFT">DRAFT</mat-option>
+        <mat-option value="REJECTED">REJECTED</mat-option>
+        <mat-option value="COMPLETED">COMPLETED</mat-option>
+        <mat-option value="CANCELLED">CANCELLED</mat-option>
+      </mat-select>
+    </mat-form-field>
 
-    <div class="search-field">
-      <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true">
-        <circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/>
-      </svg>
-      <input type="text"
-             class="search-input"
-             aria-label="Search travel requests"
-             placeholder="Search destination, purpose, or ID..."
-             [(ngModel)]="searchQuery" />
-    </div>
+    <mat-form-field appearance="outline" class="mat-field-compact" style="min-width:260px;max-width:340px">
+      <mat-label>Search travel requests</mat-label>
+      <input matInput type="text" placeholder="Destination, purpose, or ID..." [(ngModel)]="searchQuery" />
+    </mat-form-field>
   </div>
 
   @if (loading) {
-    <div class="loading-wrap"><div class="spinner"></div></div>
+    <div class="loading-wrap"><mat-spinner diameter="32" /></div>
   } @else if (error) {
     <div class="alert alert-danger row-between">
       <span>{{ error }}</span>
-      <button type="button" class="btn btn-secondary btn-sm" (click)="loadRequests()">Retry</button>
+      <button mat-stroked-button type="button" (click)="loadRequests()">Retry</button>
     </div>
   } @else {
     <div class="workbench-split" [class.inspector-open]="!!selectedRequest">

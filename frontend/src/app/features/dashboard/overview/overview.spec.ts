@@ -107,6 +107,44 @@ describe("OverviewComponent", () => {
     expect(el.textContent).toContain("Super Admin");
   });
 
+  it("computes and renders department spend, utilization, and capital summary in budgets tab", () => {
+    const fixture = TestBed.createComponent(OverviewComponent);
+    fixture.detectChanges();
+    flushInitialRequests(
+      [
+        { id: 1, name: "Asha", departmentId: 10, departmentName: "Engineering", totalWorkforce: 4 },
+        { id: 2, name: "Ravi", departmentId: 20, departmentName: "Sales", totalWorkforce: 4 }
+      ],
+      [],
+      [
+        { id: 10, name: "Engineering", annualTravelBudget: 500000, totalAllocatedBudget: 700000, spent: 125000 },
+        { id: 20, name: "Sales", annualTravelBudget: 200000, totalAllocatedBudget: 700000, spent: 100000 }
+      ],
+      []
+    );
+    fixture.detectChanges();
+
+    const comp = fixture.componentInstance;
+    expect(comp.adminDeptSpend()).toEqual([
+      { id: 10, name: "Engineering", code: "ENG", spent: 125000, budget: 500000, headcount: 1, percentage: 25 },
+      { id: 20, name: "Sales", code: "SAL", spent: 100000, budget: 200000, headcount: 1, percentage: 50 }
+    ]);
+    expect(comp.totalSpend()).toBe(225000);
+    expect(comp.remainingBudget()).toBe(475000);
+    expect(comp.budgetUtilization()).toBe(32);
+    expect(comp.avgCostPerTraveler()).toBe(56250);
+    expect(comp.topBudgetDept()?.name).toBe("Engineering");
+    expect(comp.highestUtilizationDept()?.name).toBe("Sales");
+
+    comp.setTab("budgets");
+    fixture.detectChanges();
+    const el = fixture.nativeElement as HTMLElement;
+    expect(el.textContent).toContain("Department Spend");
+    expect(el.textContent).toContain("25% used");
+    expect(el.textContent).toContain("50% used");
+    expect(el.textContent).toContain("Sales (50% cap)");
+  });
+
   it("shows diagnostic banner when department endpoint fails", () => {
     const fixture = TestBed.createComponent(OverviewComponent);
     fixture.detectChanges();

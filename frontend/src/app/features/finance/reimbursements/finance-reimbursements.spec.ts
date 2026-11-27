@@ -121,4 +121,88 @@ describe("FinanceReimbursementsComponent", () => {
 
     expect(comp.paidTotal()).toBe(5400);
   });
+
+  it("loads inline receipt preview below claim details and supports opening in a new tab or downloading", () => {
+    const fixture = TestBed.createComponent(FinanceReimbursementsComponent);
+    fixture.detectChanges();
+
+    httpMock.expectOne("http://localhost:6969/api/finance/reimbursement").flush([
+      {
+        id: 12,
+        employeeName: "Asha Rao",
+        employeeEmail: "asha@company.com",
+        travelDetailId: 9,
+        status: "PENDING",
+        comment: "Flight & hotel",
+        totalAmount: 3200,
+        createdAt: "2026-11-25T10:00:00",
+        expenses: [
+          {
+            id: 44,
+            category: "STAY",
+            amount: 3200,
+            proofFileName: "hotel-bill.pdf",
+            proofUrl: "/api/files/12/uuid-hotel-bill.pdf",
+            createdAt: "2026-11-25T10:05:00"
+          }
+        ]
+      }
+    ]);
+    fixture.detectChanges();
+
+    const comp = fixture.componentInstance;
+    comp.open(comp.itemsSignal()[0]);
+    httpMock.expectOne("http://localhost:6969/api/finance/reimbursement/12").flush({
+      id: 12,
+      employeeName: "Asha Rao",
+      employeeEmail: "asha@company.com",
+      travelDetailId: 9,
+      status: "PENDING",
+      comment: "Flight & hotel",
+      totalAmount: 3200,
+      createdAt: "2026-11-25T10:00:00",
+      expenses: [
+        {
+          id: 44,
+          category: "STAY",
+          amount: 3200,
+          proofFileName: "hotel-bill.pdf",
+          proofUrl: "/api/files/12/uuid-hotel-bill.pdf",
+          createdAt: "2026-11-25T10:05:00"
+        }
+      ]
+    });
+    fixture.detectChanges();
+
+    const createUrlSpy = vi.spyOn(URL, "createObjectURL").mockReturnValue("blob:http://localhost/mock-pdf");
+    const revokeUrlSpy = vi.spyOn(URL, "revokeObjectURL").mockImplementation(() => {});
+
+    const expense = comp.selectedClaim()!.expenses[0];
+    comp.inspectProof(12, expense);
+    const fileReq = httpMock.expectOne("http://localhost:6969/api/files/12/uuid-hotel-bill.pdf");
+    expect(fileReq.request.responseType).toBe("blob");
+    fileReq.flush(new Blob(["%PDF-1.4"], { type: "application/octet-stream" }));
+    fixture.detectChanges();
+
+    expect(comp.previewKind()).toBe("pdf");
+    const el = fixture.nativeElement as HTMLElement;
+    const viewer = el.querySelector(".proof-viewer");
+    expect(viewer).not.toBeNull();
+    expect(viewer?.textContent).toContain("Open in Tab");
+    expect(viewer?.textContent).toContain("Download");
+    expect(viewer?.querySelector("iframe.proof-pdf")).not.toBeNull();
+
+    const openSpy = vi.spyOn(window, "open").mockReturnValue({ closed: false } as Window);
+    comp.openProofInNewTab(12, expense);
+    expect(openSpy).toHaveBeenCalledWith("blob:http://localhost/mock-pdf", "_blank", "noopener");
+
+    const anchorClickSpy = vi.spyOn(HTMLAnchorElement.prototype, "click").mockImplementation(() => {});
+    comp.downloadProof(12, expense);
+    expect(anchorClickSpy).toHaveBeenCalledTimes(1);
+
+    openSpy.mockRestore();
+    anchorClickSpy.mockRestore();
+    createUrlSpy.mockRestore();
+    revokeUrlSpy.mockRestore();
+  });
 });

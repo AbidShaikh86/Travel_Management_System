@@ -1,6 +1,12 @@
 import { Component, AfterViewInit, inject, ChangeDetectionStrategy, signal, computed, OnInit } from "@angular/core";
 import { ReactiveFormsModule, FormBuilder, Validators } from "@angular/forms";
 import { HttpClient } from "@angular/common/http";
+import { MatButtonModule } from "@angular/material/button";
+import { MatFormFieldModule } from "@angular/material/form-field";
+import { MatInputModule } from "@angular/material/input";
+import { MatSelectModule } from "@angular/material/select";
+import { MatCheckboxModule } from "@angular/material/checkbox";
+import { MatProgressSpinnerModule } from "@angular/material/progress-spinner";
 import { ToastService } from "../../../core/service/toast.service";
 import { NotFoundComponent } from "../../../shared/components/not-found/not-found";
 import { extractApiErrorMessage, isBackendOfflineError } from "../../../core/utils/http-error.util";
@@ -20,7 +26,16 @@ export interface PolicyItem {
 
 @Component({
   selector: "app-admin-policies",
-  imports: [ReactiveFormsModule, NotFoundComponent],
+  imports: [
+    ReactiveFormsModule,
+    NotFoundComponent,
+    MatButtonModule,
+    MatFormFieldModule,
+    MatInputModule,
+    MatSelectModule,
+    MatCheckboxModule,
+    MatProgressSpinnerModule
+  ],
   templateUrl: "./admin-policies.html",
   styleUrl: "./admin-policies.css",
   changeDetection: ChangeDetectionStrategy.OnPush

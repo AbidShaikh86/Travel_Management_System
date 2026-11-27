@@ -2,6 +2,11 @@ import { Component, AfterViewInit, ChangeDetectionStrategy, signal, computed, in
 import { RouterLink } from "@angular/router";
 import { FormsModule } from "@angular/forms";
 import { HttpClient } from "@angular/common/http";
+import { MatButtonModule } from "@angular/material/button";
+import { MatFormFieldModule } from "@angular/material/form-field";
+import { MatInputModule } from "@angular/material/input";
+import { MatSelectModule } from "@angular/material/select";
+import { MatProgressSpinnerModule } from "@angular/material/progress-spinner";
 import { NotFoundComponent } from "../../../../shared/components/not-found/not-found";
 import { extractApiErrorMessage, isBackendOfflineError } from "../../../../core/utils/http-error.util";
 import { animatePageIn, animateStagger } from "../../../../shared/animations/gsap.animations";
@@ -22,7 +27,16 @@ export interface ReimbursementItem {
 
 @Component({
   selector: "app-reimbursement-list",
-  imports: [RouterLink, FormsModule, NotFoundComponent],
+  imports: [
+    RouterLink,
+    FormsModule,
+    NotFoundComponent,
+    MatButtonModule,
+    MatFormFieldModule,
+    MatInputModule,
+    MatSelectModule,
+    MatProgressSpinnerModule
+  ],
   templateUrl: "./reimbursement-list.html",
   styleUrl: "./reimbursement-list.css",
   changeDetection: ChangeDetectionStrategy.OnPush

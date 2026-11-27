@@ -54,18 +54,16 @@
       }
     </div>
 
-    <div class="search-field">
-      <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true">
-        <circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/>
-      </svg>
+    <mat-form-field appearance="outline" class="mat-field-compact" style="min-width:260px;max-width:340px">
+      <mat-label>Search travel requests</mat-label>
       <input
+        matInput
         type="text"
-        class="search-input"
         aria-label="Search travel requests"
         placeholder="Search city, purpose, or trip #..."
         [value]="searchQuery()"
         (input)="searchQuery.set($any($event.target).value)" />
-    </div>
+    </mat-form-field>
   </div>
 
   @if (loading()) {
@@ -289,7 +287,7 @@
 
               @if (!canModifyBudget(trip)) {
                 <div class="alert alert-info" style="font-size:13px">
-                  @if (trip.status === 'COMPLETED' || trip.status === 'CANCELLED') {
+                  @if (trip.status === 'APPROVED' || trip.status === 'REJECTED' || trip.status === 'COMPLETED' || trip.status === 'CANCELLED') {
                     <span>This travel request is <strong>{{ trip.status }}</strong> and can no longer be modified by Finance.</span>
                   } @else {
                     <span>Manager approval is required before Finance can authorize or update this trip's budget.</span>
@@ -301,49 +299,50 @@
                     <span class="detail-block-label">Finance Budget Authorization</span>
                   </div>
                   <div class="form-row">
-                    <div class="form-group">
-                      <label class="form-label" for="authorizedBudgetInput">Authorized Finance Budget (&#8377;) <span class="req">*</span></label>
+                    <mat-form-field appearance="outline">
+                      <mat-label>Authorized Finance Budget (&#8377;)</mat-label>
                       <input
+                        matInput
                         id="authorizedBudgetInput"
                         type="number"
-                        class="form-control num"
-                        [class.invalid]="form.get('budget')!.invalid && form.get('budget')!.touched"
+                        class="num"
                         formControlName="budget"
                         min="0"
-                        placeholder="e.g. 10000" />
+                        placeholder="e.g. 10000"
+                        required />
                       @if (form.get('budget')!.invalid && form.get('budget')!.touched) {
-                        <span class="form-error">Please specify an approved budget amount</span>
+                        <mat-error>Please specify an approved budget amount</mat-error>
                       }
-                    </div>
+                    </mat-form-field>
 
-                    <div class="form-group">
-                      <label class="form-label" for="budgetStatusSelect">Update Status <span class="req">*</span></label>
-                      <select id="budgetStatusSelect" class="form-control" formControlName="status">
+                    <mat-form-field appearance="outline">
+                      <mat-label>Update Status</mat-label>
+                      <mat-select formControlName="status" required>
                         @for (s of statuses; track s) {
-                          <option [value]="s">{{ s }}</option>
+                          <mat-option [value]="s">{{ s }}</mat-option>
                         }
-                      </select>
-                    </div>
+                      </mat-select>
+                    </mat-form-field>
                   </div>
                 </div>
               }
             </div>
 
             <div class="inspector-footer">
-              <button type="button" class="btn btn-secondary btn-sm" (click)="close()">
+              <button mat-stroked-button type="button" (click)="close()">
                 {{ budgetEditorOpen() ? 'Cancel' : 'Close' }}
               </button>
 
               @if (canModifyBudget(trip) && !budgetEditorOpen()) {
-                <button type="button" class="btn btn-primary btn-sm" (click)="enableBudgetEditor()">
+                <button mat-flat-button color="primary" type="button" (click)="enableBudgetEditor()">
                   Set Budget
                 </button>
               }
 
               @if (canModifyBudget(trip) && budgetEditorOpen()) {
-                <button type="submit" class="btn btn-primary btn-sm" [disabled]="submitting()">
+                <button mat-flat-button color="primary" type="submit" [disabled]="submitting()">
                   @if (submitting()) {
-                    <span class="spinner" style="width:13px;height:13px;border-top-color:currentColor"></span>
+                    <mat-spinner diameter="16" />
                   }
                   Confirm Budget
                 </button>

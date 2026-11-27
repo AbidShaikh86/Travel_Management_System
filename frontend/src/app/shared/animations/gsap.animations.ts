@@ -218,10 +218,33 @@ export function animateNavIndicator(indicator: HTMLElement, target: HTMLElement,
     width,
     height,
     opacity: 1,
-    duration: 0.26,
+    duration: 0.24,
     ease: "power3.out",
     force3D: true
   });
+}
+
+export function animateSummaryStrip(cells: Element[] | NodeListOf<Element>) {
+  if (!cells || cells.length === 0) return;
+  const list = Array.from(cells);
+  gsap.killTweensOf(list);
+  if (prefersReducedMotion()) {
+    gsap.set(list, { opacity: 1, y: 0 });
+    return;
+  }
+  gsap.fromTo(
+    list,
+    { opacity: 0.65, y: 5 },
+    {
+      opacity: 1,
+      y: 0,
+      duration: 0.24,
+      stagger: 0.035,
+      ease: "power3.out",
+      clearProps: "transform,opacity",
+      force3D: true
+    }
+  );
 }
 
 export function animateProgressBars(bars: Element[] | NodeListOf<Element>) {

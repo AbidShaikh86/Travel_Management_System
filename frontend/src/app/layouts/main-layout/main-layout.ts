@@ -20,6 +20,16 @@ import { ReactiveFormsModule, FormBuilder, Validators } from "@angular/forms";
 import { takeUntilDestroyed } from "@angular/core/rxjs-interop";
 import { filter, fromEvent } from "rxjs";
 import gsap from "gsap";
+import { MatSidenavModule } from "@angular/material/sidenav";
+import { MatToolbarModule } from "@angular/material/toolbar";
+import { MatListModule } from "@angular/material/list";
+import { MatButtonModule } from "@angular/material/button";
+import { MatTooltipModule } from "@angular/material/tooltip";
+import { MatRippleModule } from "@angular/material/core";
+import { MatFormFieldModule } from "@angular/material/form-field";
+import { MatInputModule } from "@angular/material/input";
+import { MatProgressSpinnerModule } from "@angular/material/progress-spinner";
+import { MatDividerModule } from "@angular/material/divider";
 import { AuthService } from "../../core/service/auth.service";
 import { ThemeService } from "../../core/service/theme.service";
 import { ToastService } from "../../core/service/toast.service";
@@ -47,7 +57,22 @@ export interface NavSection {
 
 @Component({
   selector: "app-main-layout",
-  imports: [RouterOutlet, RouterLink, NgTemplateOutlet, ReactiveFormsModule],
+  imports: [
+    RouterOutlet,
+    RouterLink,
+    NgTemplateOutlet,
+    ReactiveFormsModule,
+    MatSidenavModule,
+    MatToolbarModule,
+    MatListModule,
+    MatButtonModule,
+    MatTooltipModule,
+    MatRippleModule,
+    MatFormFieldModule,
+    MatInputModule,
+    MatProgressSpinnerModule,
+    MatDividerModule
+  ],
   templateUrl: "./main-layout.html",
   styleUrl: "./main-layout.css",
   changeDetection: ChangeDetectionStrategy.OnPush
@@ -70,11 +95,14 @@ export class MainLayout implements OnInit, AfterViewInit {
 
   readonly currentUser = this.authService.currentUser;
   readonly currentUrl = signal(this.router.url.split("?")[0]);
+  readonly railCollapsed = signal(false);
   readonly mobileMenuOpen = signal(false);
   readonly accountModalOpen = signal(false);
   readonly profileLoading = signal(false);
   readonly passwordSubmitting = signal(false);
   readonly passwordError = signal<string | null>(null);
+  readonly hideOldPassword = signal(true);
+  readonly hideNewPassword = signal(true);
 
   readonly passwordForm = this.fb.group({
     oldPassword: ["", [Validators.required]],
@@ -171,6 +199,11 @@ export class MainLayout implements OnInit, AfterViewInit {
 
   readonly navItems = computed(() => this.navSections().flatMap((sec) => sec.items));
 
+  readonly activePageTitle = computed(() => {
+    const active = this.navItems().find((item) => this.isNavActive(item.path));
+    return active?.label || "Workspace";
+  });
+
   constructor() {
     this.router.events
       .pipe(
@@ -188,6 +221,7 @@ export class MainLayout implements OnInit, AfterViewInit {
     effect(() => {
       this.currentUrl();
       this.navItems();
+      this.railCollapsed();
       afterNextRender(() => this.syncNavIndicator(false), { injector: this.injector });
     });
   }
@@ -204,6 +238,10 @@ export class MainLayout implements OnInit, AfterViewInit {
       return url === "/dashboard/my-reimbursements" || (url.startsWith("/dashboard/my-reimbursements/") && url !== "/dashboard/my-reimbursements/new");
     }
     return url === path || url.startsWith(path + "/");
+  }
+
+  toggleRail() {
+    this.railCollapsed.update((c) => !c);
   }
 
   toggleTheme() {
@@ -245,6 +283,8 @@ export class MainLayout implements OnInit, AfterViewInit {
   openAccountModal() {
     this.accountModalOpen.set(true);
     this.passwordError.set(null);
+    this.hideOldPassword.set(true);
+    this.hideNewPassword.set(true);
     this.passwordForm.reset({ oldPassword: "", newPassword: "" });
     this.profileLoading.set(true);
     this.authService.fetchProfile().pipe(takeUntilDestroyed(this.destroyRef)).subscribe({
@@ -297,8 +337,8 @@ export class MainLayout implements OnInit, AfterViewInit {
     if (masthead && !prefersReducedMotion()) {
       gsap.fromTo(
         masthead,
-        { y: -8, opacity: 0.92 },
-        { y: 0, opacity: 1, duration: 0.28, ease: "power3.out", clearProps: "transform,opacity" }
+        { y: -6, opacity: 0.94 },
+        { y: 0, opacity: 1, duration: 0.24, ease: "power3.out", clearProps: "transform,opacity" }
       );
     }
     requestAnimationFrame(() => this.syncNavIndicator(true));

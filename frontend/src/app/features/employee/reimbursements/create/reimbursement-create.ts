@@ -2,6 +2,11 @@ import { Component, AfterViewInit, inject, ChangeDetectionStrategy, signal, OnIn
 import { ReactiveFormsModule, FormBuilder, Validators } from "@angular/forms";
 import { Router, RouterLink } from "@angular/router";
 import { HttpClient } from "@angular/common/http";
+import { MatButtonModule } from "@angular/material/button";
+import { MatFormFieldModule } from "@angular/material/form-field";
+import { MatInputModule } from "@angular/material/input";
+import { MatSelectModule } from "@angular/material/select";
+import { MatProgressSpinnerModule } from "@angular/material/progress-spinner";
 import { ToastService } from "../../../../core/service/toast.service";
 import { NotFoundComponent } from "../../../../shared/components/not-found/not-found";
 import { extractApiErrorMessage, isBackendOfflineError } from "../../../../core/utils/http-error.util";
@@ -9,7 +14,16 @@ import { animatePageIn } from "../../../../shared/animations/gsap.animations";
 
 @Component({
   selector: "app-reimbursement-create",
-  imports: [ReactiveFormsModule, RouterLink, NotFoundComponent],
+  imports: [
+    ReactiveFormsModule,
+    RouterLink,
+    NotFoundComponent,
+    MatButtonModule,
+    MatFormFieldModule,
+    MatInputModule,
+    MatSelectModule,
+    MatProgressSpinnerModule
+  ],
   templateUrl: "./reimbursement-create.html",
   styleUrl: "./reimbursement-create.css",
   changeDetection: ChangeDetectionStrategy.OnPush

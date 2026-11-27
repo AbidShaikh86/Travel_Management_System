@@ -11,7 +11,7 @@
       <p class="page-subtitle">Manage, submit, and track expense claims for your approved travels.</p>
     </div>
     <div class="page-actions">
-      <a routerLink="/dashboard/my-reimbursements/new" class="btn btn-primary btn-sm">
+      <a mat-flat-button color="primary" routerLink="/dashboard/my-reimbursements/new">
         <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true">
           <line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/>
         </svg>
@@ -40,36 +40,30 @@
   </section>
 
   <div class="controls-bar">
-    <div class="filter-inline">
-      <label for="claimStatusSelect" class="filter-label">Status</label>
-      <select id="claimStatusSelect" class="form-control filter-select" [(ngModel)]="selectedFilter">
-        <option value="ALL">All Statuses</option>
-        <option value="DRAFT">DRAFT</option>
-        <option value="PENDING">PENDING</option>
-        <option value="APPROVED">APPROVED</option>
-        <option value="REJECTED">REJECTED</option>
-        <option value="PAID">PAID</option>
-      </select>
-    </div>
+    <mat-form-field appearance="outline" class="mat-field-compact" style="width:200px">
+      <mat-label>Status</mat-label>
+      <mat-select [(ngModel)]="selectedFilter">
+        <mat-option value="ALL">All Statuses</mat-option>
+        <mat-option value="DRAFT">DRAFT</mat-option>
+        <mat-option value="PENDING">PENDING</mat-option>
+        <mat-option value="APPROVED">APPROVED</mat-option>
+        <mat-option value="REJECTED">REJECTED</mat-option>
+        <mat-option value="PAID">PAID</mat-option>
+      </mat-select>
+    </mat-form-field>
 
-    <div class="search-field">
-      <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true">
-        <circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/>
-      </svg>
-      <input type="text"
-             class="search-input"
-             aria-label="Search reimbursement claims"
-             placeholder="Search by trip destination or claim ID..."
-             [(ngModel)]="searchQuery" />
-    </div>
+    <mat-form-field appearance="outline" class="mat-field-compact" style="min-width:260px;max-width:340px">
+      <mat-label>Search reimbursement claims</mat-label>
+      <input matInput type="text" placeholder="Destination or claim ID..." [(ngModel)]="searchQuery" />
+    </mat-form-field>
   </div>
 
   @if (loading) {
-    <div class="loading-wrap"><div class="spinner"></div></div>
+    <div class="loading-wrap"><mat-spinner diameter="32" /></div>
   } @else if (error) {
     <div class="alert alert-danger row-between">
       <span>{{ error }}</span>
-      <button type="button" class="btn btn-secondary btn-sm" (click)="loadReimbursements()">Retry</button>
+      <button mat-stroked-button type="button" (click)="loadReimbursements()">Retry</button>
     </div>
   } @else if (filteredItems.length === 0) {
     <div class="card">

@@ -29,7 +29,7 @@ describe("TravelBudgetComponent", () => {
         destination: "Pune",
         purpose: "Client site visit",
         travelClass: null,
-        status: "APPROVED",
+        status: "PENDING",
         stay: 2,
         travelStartDate: "2026-12-15",
         estimatedBudget: 9000,
@@ -74,7 +74,7 @@ describe("TravelBudgetComponent", () => {
       destination: "Pune",
       purpose: "Client site visit",
       travelClass: null,
-      status: "APPROVED",
+      status: "PENDING",
       stay: 2,
       travelStartDate: "2026-12-15",
       estimatedBudget: 9000,
@@ -109,17 +109,20 @@ describe("TravelBudgetComponent", () => {
     fixture.detectChanges();
     expect(comp.budgetEditorOpen()).toBe(true);
 
-    comp.form.patchValue({ budget: 11000, status: "COMPLETED" });
+    comp.form.patchValue({ budget: 11000, status: "APPROVED" });
     comp.save();
 
     const patchReq = httpMock.expectOne("http://localhost:6969/api/finance/19");
     expect(patchReq.request.method).toBe("PATCH");
-    expect(patchReq.request.body).toEqual({ budget: 11000, status: "COMPLETED" });
+    expect(patchReq.request.body).toEqual({ budget: 11000, status: "APPROVED" });
     patchReq.flush({ process: true, message: "Status has been updated!" });
     fixture.detectChanges();
 
     expect(comp.requestsSignal()[0].estimatedBudget).toBe(11000);
-    expect(comp.requestsSignal()[0].status).toBe("COMPLETED");
+    expect(comp.requestsSignal()[0].status).toBe("APPROVED");
+    expect(comp.canModifyBudget(comp.requestsSignal()[0])).toBe(false);
+    expect(comp.readyForBudgetCount()).toBe(0);
+    expect((fixture.nativeElement as HTMLElement).textContent).not.toContain("Set Budget");
     expect(comp.selected()).toBeNull();
   });
 

@@ -15,6 +15,12 @@ import { RouterLink } from "@angular/router";
 import { HttpClient } from "@angular/common/http";
 import { toSignal } from "@angular/core/rxjs-interop";
 import { startWith } from "rxjs";
+import { MatCardModule } from "@angular/material/card";
+import { MatFormFieldModule } from "@angular/material/form-field";
+import { MatInputModule } from "@angular/material/input";
+import { MatSelectModule } from "@angular/material/select";
+import { MatButtonModule } from "@angular/material/button";
+import { MatProgressSpinnerModule } from "@angular/material/progress-spinner";
 import { animatePageIn } from "../../../shared/animations/gsap.animations";
 import { NotFoundComponent } from "../../../shared/components/not-found/not-found";
 import { ToastService } from "../../../core/service/toast.service";
@@ -32,7 +38,17 @@ export type TravelMode = "FLIGHT" | "TRAIN" | "OWN_VEHICLE";
 
 @Component({
   selector: "app-manager-request-travel",
-  imports: [ReactiveFormsModule, RouterLink, NotFoundComponent],
+  imports: [
+    ReactiveFormsModule,
+    RouterLink,
+    NotFoundComponent,
+    MatCardModule,
+    MatFormFieldModule,
+    MatInputModule,
+    MatSelectModule,
+    MatButtonModule,
+    MatProgressSpinnerModule
+  ],
   templateUrl: "./manager-request-travel.html",
   styleUrl: "./manager-request-travel.css",
   changeDetection: ChangeDetectionStrategy.OnPush

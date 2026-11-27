@@ -1,5 +1,5 @@
 <section class="status-stage" [attr.aria-label]="heading()">
-  <div class="status-panel">
+  <mat-card class="status-panel" appearance="outlined">
     <div class="status-visual" aria-hidden="true">
       <div class="status-icon-box" [class.offline]="isOffline()">
         @if (isOffline()) {
@@ -44,7 +44,7 @@
 
     <div class="status-actions">
       @if (canRetry()) {
-        <button type="button" class="btn btn-primary btn-sm" (click)="onRetry()">
+        <button mat-flat-button color="primary" type="button" class="btn-primary" (click)="onRetry()">
           <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true">
             <polyline points="23 4 23 10 17 10" />
             <path d="M20.49 15a9 9 0 1 1-2.12-9.36L23 10" />
@@ -52,9 +52,11 @@
           Retry Connection
         </button>
       }
-      <a [routerLink]="homeLink()" class="btn btn-sm" [class.btn-secondary]="canRetry()" [class.btn-primary]="!canRetry()">
-        {{ homeLabel() }}
-      </a>
+      @if (canRetry()) {
+        <a mat-stroked-button [routerLink]="homeLink()">{{ homeLabel() }}</a>
+      } @else {
+        <a mat-flat-button color="primary" [routerLink]="homeLink()">{{ homeLabel() }}</a>
+      }
     </div>
-  </div>
+  </mat-card>
 </section>

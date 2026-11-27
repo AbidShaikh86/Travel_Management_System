@@ -16,6 +16,10 @@ import { RouterLink } from "@angular/router";
 import { HttpClient, HttpErrorResponse } from "@angular/common/http";
 import { catchError, forkJoin, fromEvent, of } from "rxjs";
 import { takeUntilDestroyed } from "@angular/core/rxjs-interop";
+import { MatCardModule } from "@angular/material/card";
+import { MatButtonModule } from "@angular/material/button";
+import { MatProgressBarModule } from "@angular/material/progress-bar";
+import { MatRippleModule } from "@angular/material/core";
 import {
   animateNumber,
   animatePageIn,
@@ -95,7 +99,7 @@ export interface AdminAuditLog {
 
 @Component({
   selector: "app-overview",
-  imports: [RouterLink, NotFoundComponent],
+  imports: [RouterLink, NotFoundComponent, MatCardModule, MatButtonModule, MatProgressBarModule, MatRippleModule],
   templateUrl: "./overview.html",
   styleUrl: "./overview.css",
   changeDetection: ChangeDetectionStrategy.OnPush
@@ -302,8 +306,7 @@ export class OverviewComponent implements OnInit {
   readonly topBudgetDept = computed(() => {
     const list = this.adminDeptSpend();
     if (list.length === 0) return null;
-    const hasSpend = list.some((d) => d.spent > 0);
-    return [...list].sort((a, b) => (hasSpend ? b.spent - a.spent : b.budget - a.budget))[0];
+    return [...list].sort((a, b) => (b.budget - a.budget) || (b.spent - a.spent))[0];
   });
 
   readonly highestUtilizationDept = computed(() => {

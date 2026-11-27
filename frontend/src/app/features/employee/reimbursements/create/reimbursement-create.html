@@ -11,16 +11,16 @@
       <p class="page-subtitle">Select an approved travel request to assemble your expense receipts.</p>
     </div>
     <div class="page-actions">
-      <a routerLink="/dashboard/my-reimbursements" class="btn btn-secondary">Cancel</a>
+      <a mat-stroked-button routerLink="/dashboard/my-reimbursements">Cancel</a>
     </div>
   </div>
 
   @if (loading) {
-    <div class="loading-wrap"><div class="spinner"></div></div>
+    <div class="loading-wrap"><mat-spinner diameter="32" /></div>
   } @else if (loadError()) {
     <div class="alert alert-danger row-between">
       <span>{{ loadError() }}</span>
-      <button type="button" class="btn btn-secondary btn-sm" (click)="loadEligibleTrips()">Retry</button>
+      <button mat-stroked-button type="button" (click)="loadEligibleTrips()">Retry</button>
     </div>
   } @else {
     <form [formGroup]="form" (ngSubmit)="submit()" novalidate>
@@ -28,34 +28,31 @@
         <div class="card-header"><span class="card-title">Claim Specification</span></div>
         <div class="card-body" style="display:flex;flex-direction:column;gap:18px">
 
-          <div class="form-group">
-            <label class="form-label" for="travelId">Linked Approved Travel <span class="req">*</span></label>
-            @if (eligibleTrips.length === 0) {
-              <div class="alert alert-info">
-                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg>
-                No approved trips available. Your travel request must be approved before you can submit expenses.
-              </div>
-            } @else {
-              <select id="travelId" class="form-control"
-                      [class.invalid]="form.get('travelId')!.invalid && form.get('travelId')!.touched"
-                      formControlName="travelId">
-                <option [value]="null">Select an approved trip...</option>
+          @if (eligibleTrips.length === 0) {
+            <div class="alert alert-info">
+              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg>
+              No approved trips available. Your travel request must be approved before you can submit expenses.
+            </div>
+          } @else {
+            <mat-form-field appearance="outline">
+              <mat-label>Linked Approved Travel</mat-label>
+              <mat-select formControlName="travelId" placeholder="Choose an approved trip" required>
                 @for (t of eligibleTrips; track t.id) {
-                  <option [value]="t.id">{{ t.destination }} — Departed {{ formatDate(t.travelStartDate) }}</option>
+                  <mat-option [value]="t.id">{{ t.destination }} — Departed {{ formatDate(t.travelStartDate) }}</mat-option>
                 }
-              </select>
+              </mat-select>
               @if (form.get('travelId')!.invalid && form.get('travelId')!.touched) {
-                <span class="form-error">Please select a travel itinerary</span>
+                <mat-error>Please select a travel itinerary</mat-error>
               }
-            }
-          </div>
+            </mat-form-field>
+          }
 
-          <div class="form-group">
-            <label class="form-label" for="comment">Claim Notes / Description</label>
-            <textarea id="comment" class="form-control" formControlName="comment" rows="3"
+          <mat-form-field appearance="outline">
+            <mat-label>Claim Notes / Description</mat-label>
+            <textarea matInput id="comment" formControlName="comment" rows="3"
                       placeholder="e.g. Submitting flight tickets, accommodation invoices, and ground transit for the Bangalore sprint..."></textarea>
-            <span class="form-hint">Brief summary of expenses included for finance audit team.</span>
-          </div>
+            <mat-hint>Brief summary of expenses included for finance audit team.</mat-hint>
+          </mat-form-field>
 
           <div class="alert alert-info" style="font-size:13px">
             <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg>
@@ -64,8 +61,8 @@
         </div>
 
         <div class="card-footer">
-          <button type="submit" class="btn btn-primary" [disabled]="submitting || eligibleTrips.length === 0">
-            @if (submitting) { <span class="spinner" style="border-top-color:#fff"></span> }
+          <button mat-flat-button color="primary" type="submit" [disabled]="submitting || eligibleTrips.length === 0">
+            @if (submitting) { <mat-spinner diameter="16" /> }
             Create Claim Draft
           </button>
         </div>

@@ -3,6 +3,11 @@ import { RouterLink, ActivatedRoute } from "@angular/router";
 import { ReactiveFormsModule, FormBuilder, Validators } from "@angular/forms";
 import { HttpClient } from "@angular/common/http";
 import { catchError, of } from "rxjs";
+import { MatButtonModule } from "@angular/material/button";
+import { MatFormFieldModule } from "@angular/material/form-field";
+import { MatInputModule } from "@angular/material/input";
+import { MatSelectModule } from "@angular/material/select";
+import { MatProgressSpinnerModule } from "@angular/material/progress-spinner";
 import { ToastService } from "../../../../core/service/toast.service";
 import { NotFoundComponent } from "../../../../shared/components/not-found/not-found";
 import { extractApiErrorMessage, isBackendOfflineError } from "../../../../core/utils/http-error.util";
@@ -40,7 +45,16 @@ export interface TripSummary {
 
 @Component({
   selector: "app-reimbursement-detail",
-  imports: [RouterLink, ReactiveFormsModule, NotFoundComponent],
+  imports: [
+    RouterLink,
+    ReactiveFormsModule,
+    NotFoundComponent,
+    MatButtonModule,
+    MatFormFieldModule,
+    MatInputModule,
+    MatSelectModule,
+    MatProgressSpinnerModule
+  ],
   templateUrl: "./reimbursement-detail.html",
   styleUrl: "./reimbursement-detail.css",
   changeDetection: ChangeDetectionStrategy.OnPush

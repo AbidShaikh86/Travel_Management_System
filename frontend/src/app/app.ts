@@ -1,11 +1,12 @@
 import { ChangeDetectionStrategy, Component, inject } from "@angular/core";
 import { RouterOutlet } from "@angular/router";
+import { MatButtonModule } from "@angular/material/button";
 import { ThemeService } from "./core/service/theme.service";
 import { ToastService } from "./core/service/toast.service";
 
 @Component({
   selector: "app-root",
-  imports: [RouterOutlet],
+  imports: [RouterOutlet, MatButtonModule],
   templateUrl: "./app.html",
   styleUrl: "./app.css",
   changeDetection: ChangeDetectionStrategy.OnPush
