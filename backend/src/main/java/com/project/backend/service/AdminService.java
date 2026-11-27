@@ -7,11 +7,13 @@ import com.project.backend.model.Department;
 import com.project.backend.model.Enumerator.AuditEntityType;
 import com.project.backend.model.Enumerator.Gender;
 import com.project.backend.model.Enumerator.PolicyType;
+import com.project.backend.model.Enumerator.ReimbursementStatus;
 import com.project.backend.model.Enumerator.Role;
 import com.project.backend.model.Policy;
 import com.project.backend.model.User;
 import com.project.backend.model.UserAuth;
 import com.project.backend.repository.DepartmentRepository;
+import com.project.backend.repository.ExpenseRepository;
 import com.project.backend.repository.PolicyRepository;
 import com.project.backend.repository.UserAuthRepository;
 import com.project.backend.repository.UserRepository;
@@ -24,7 +26,9 @@ import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 
 @Service
 public class AdminService {
@@ -33,15 +37,17 @@ public class AdminService {
     private final PolicyRepository policyRepository;
     private final UserAuthRepository userAuthRepository;
     private final DepartmentRepository departmentRepository;
+    private final ExpenseRepository expenseRepository;
     private final PasswordEncoder passwordEncoder;
     private final GlobalMessage globalMessage;
     private final AuditService auditService;
 
-    public AdminService(UserRepository userRepository, PolicyRepository policyRepository, UserAuthRepository userAuthRepository, DepartmentRepository departmentRepository, PasswordEncoder passwordEncoder, GlobalMessage globalMessage, AuditService auditService) {
+    public AdminService(UserRepository userRepository, PolicyRepository policyRepository, UserAuthRepository userAuthRepository, DepartmentRepository departmentRepository, ExpenseRepository expenseRepository, PasswordEncoder passwordEncoder, GlobalMessage globalMessage, AuditService auditService) {
         this.userRepository = userRepository;
         this.policyRepository = policyRepository;
         this.userAuthRepository = userAuthRepository;
         this.departmentRepository = departmentRepository;
+        this.expenseRepository = expenseRepository;
         this.passwordEncoder = passwordEncoder;
         this.globalMessage = globalMessage;
         this.auditService = auditService;
@@ -159,6 +165,15 @@ public class AdminService {
                 .mapToDouble(d -> d.getAnnualTravelBudget() != null ? d.getAnnualTravelBudget() : 0.0)
                 .sum();
 
+        Map<Long, Double> spentByDepartmentId = new HashMap<>();
+        for (Object[] row : this.expenseRepository.sumAmountByDepartmentIdAndReimbursementStatus(ReimbursementStatus.PAID)) {
+            if (row != null && row[0] != null) {
+                Long deptId = ((Number) row[0]).longValue();
+                double amount = row[1] != null ? ((Number) row[1]).doubleValue() : 0.0;
+                spentByDepartmentId.put(deptId, amount);
+            }
+        }
+
         return departmentList.stream().map(list -> {
 
             return DepartmentDDResponse.builder()
@@ -166,6 +181,7 @@ public class AdminService {
                     .name(list.getDepartmentName())
                     .annualTravelBudget(list.getAnnualTravelBudget())
                     .totalAllocatedBudget(totalAllocated)
+                    .spent(spentByDepartmentId.getOrDefault(list.getDeptId(), 0.0))
                     .build();
         }).toList();
     }

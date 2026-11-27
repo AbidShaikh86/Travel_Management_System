@@ -217,6 +217,8 @@ public class ReimbursementService {
     public ResponseEntity<GlobalResponse> reimbursementPaid(Long id) {
         Reimbursement reim = this.reimbursementRepository.findById(id)
                 .orElseThrow(() -> new RuntimeException("Invalid id!"));
+        TravelDetail detail = this.travelRequestRepository.findById(reim.getTravelDetail().getId())
+                .orElseThrow(() -> new RuntimeException("Travel request not found"));
 
         if (reim.getStatus() != ReimbursementStatus.APPROVED) {
             return this.globalMessage.GlobalMessageHandler(false, "Only APPROVED reimbursement claims can be marked as PAID! Current status: " + reim.getStatus(), HttpStatus.CONFLICT );
@@ -224,6 +226,9 @@ public class ReimbursementService {
 
         reim.setStatus(ReimbursementStatus.PAID);
         this.reimbursementRepository.save(reim);
+
+        detail.setStatus(Status.COMPLETED);
+        this.travelRequestRepository.save(detail);
         this.auditService.log(
                 AuditEntityType.REIMBURSEMENT,
                 reim.getId(),

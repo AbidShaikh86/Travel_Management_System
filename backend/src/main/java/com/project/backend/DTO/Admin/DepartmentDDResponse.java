@@ -14,4 +14,5 @@ public class DepartmentDDResponse {
     private String name;
     private Double annualTravelBudget;
     private Double totalAllocatedBudget;
+    private Double spent;
 }
