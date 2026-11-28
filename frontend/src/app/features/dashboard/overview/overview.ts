@@ -30,7 +30,9 @@ import {
 } from "../../../shared/animations/gsap.animations";
 import { AuthService } from "../../../core/service/auth.service";
 import { NotFoundComponent } from "../../../shared/components/not-found/not-found";
+import { PaginationComponent, createPagination } from "../../../shared/components/pagination/pagination";
 import { extractApiErrorMessage, isBackendOfflineError } from "../../../core/utils/http-error.util";
+import { environment } from '../../../../environments/environment';
 
 export type OverviewTab = "overview" | "budgets" | "compliance";
 
@@ -99,7 +101,7 @@ export interface AdminAuditLog {
 
 @Component({
   selector: "app-overview",
-  imports: [RouterLink, NotFoundComponent, MatCardModule, MatButtonModule, MatProgressBarModule, MatRippleModule],
+  imports: [RouterLink, NotFoundComponent, PaginationComponent, MatCardModule, MatButtonModule, MatProgressBarModule, MatRippleModule],
   templateUrl: "./overview.html",
   styleUrl: "./overview.css",
   changeDetection: ChangeDetectionStrategy.OnPush
@@ -109,7 +111,7 @@ export class OverviewComponent implements OnInit {
   private http = inject(HttpClient);
   private injector = inject(Injector);
   private destroyRef = inject(DestroyRef);
-  private apiBase = "http://localhost:6969/api";
+  private apiBase = environment.apiUrl;
 
   readonly overviewRoot = viewChild<ElementRef<HTMLElement>>("overviewRoot");
   readonly tabIndicator = viewChild<ElementRef<HTMLElement>>("tabIndicator");
@@ -164,7 +166,8 @@ export class OverviewComponent implements OnInit {
   readonly managerFlaggedCount = computed(() =>
     this.managerPendingSignal().filter((item) => Boolean(item?.travelDetail?.isFlagged ?? item?.isFlagged)).length
   );
-  readonly managerPreviewItems = computed(() => this.managerPendingSignal().slice(0, 5));
+  readonly managerPendingPager = createPagination(() => this.managerPendingSignal(), 5);
+  readonly managerPreviewItems = this.managerPendingPager.items;
 
   // Finance Signals
   readonly financeTravelSignal = signal<any[]>([]);
@@ -183,8 +186,10 @@ export class OverviewComponent implements OnInit {
       .filter((c) => c.status === "APPROVED")
       .reduce((acc, c) => acc + Number(c.totalAmount ?? 0), 0)
   );
-  readonly financeTravelPreview = computed(() => this.financeActionableTravel().slice(0, 4));
-  readonly financeClaimsPreview = computed(() => this.financeClaimsSignal().slice(0, 4));
+  readonly financeTravelPager = createPagination(() => this.financeActionableTravel(), 4);
+  readonly financeTravelPreview = this.financeTravelPager.items;
+  readonly financeClaimsPager = createPagination(() => this.financeClaimsSignal(), 4);
+  readonly financeClaimsPreview = this.financeClaimsPager.items;
 
   // Employee Signals
   readonly employeeRequestsSignal = signal<any[]>([]);
@@ -196,8 +201,10 @@ export class OverviewComponent implements OnInit {
   readonly employeeClaimedTotal = computed(() =>
     this.employeeClaimsSignal().reduce((acc, claim) => acc + this.claimTotal(claim), 0)
   );
-  readonly employeeRequestsPreview = computed(() => this.employeeRequestsSignal().slice(0, 4));
-  readonly employeeClaimsPreview = computed(() => this.employeeClaimsSignal().slice(0, 4));
+  readonly employeeRequestsPager = createPagination(() => this.employeeRequestsSignal(), 4);
+  readonly employeeRequestsPreview = this.employeeRequestsPager.items;
+  readonly employeeClaimsPager = createPagination(() => this.employeeClaimsSignal(), 4);
+  readonly employeeClaimsPreview = this.employeeClaimsPager.items;
 
   readonly adminDeptSpend = computed<AdminDeptSpend[]>(() => {
     if (!this.departmentsLoaded()) {
@@ -295,8 +302,13 @@ export class OverviewComponent implements OnInit {
     return budget > 0 ? Math.min(100, Math.round((this.totalSpend() / budget) * 100)) : 0;
   });
 
-  readonly overviewDeptPreview = computed(() => this.adminDeptSpend().slice(0, 5));
-  readonly recentAuditOverview = computed(() => this.adminAuditLogs().slice(0, 4));
+  readonly overviewDeptPager = createPagination(() => this.adminDeptSpend(), 5);
+  readonly overviewDeptPreview = this.overviewDeptPager.items;
+  readonly recentAuditPager = createPagination(() => this.adminAuditLogs(), 4);
+  readonly recentAuditOverview = this.recentAuditPager.items;
+  readonly budgetDeptPager = createPagination(() => this.adminDeptSpend(), 5);
+  readonly compliancePolicyPager = createPagination(() => this.adminPoliciesSignal(), 5);
+  readonly complianceAuditPager = createPagination(() => this.adminAuditLogs(), 6);
 
   readonly avgCostPerTraveler = computed(() => {
     const count = this.employeeCount();
@@ -333,6 +345,7 @@ export class OverviewComponent implements OnInit {
     this.roleLoadError.set(null);
     this.departmentsError.set(null);
     this.auditError.set(null);
+    this.resetPagers();
 
     if (this.isManager()) {
       this.http.get<any[]>(`${this.apiBase}/manager/pending`).subscribe({
@@ -428,7 +441,7 @@ export class OverviewComponent implements OnInit {
             if (isBackendOfflineError(err)) adminOfflineHits++;
             const serverMsg = err.error?.message ? ` — ${err.error.message}` : "";
             const msg = err.status === 0
-              ? "Cannot reach audit log service on port 6969."
+              ? "Cannot reach audit log service."
               : `Unable to load audit logs (HTTP ${err.status})${serverMsg}`;
             this.auditError.set(msg);
             return of(null);
@@ -454,7 +467,7 @@ export class OverviewComponent implements OnInit {
           if (isBackendOfflineError(err)) adminOfflineHits++;
           const serverMsg = err.error?.message ? ` — ${err.error.message}` : "";
           const msg = err.status === 0
-            ? "Cannot reach backend on port 6969."
+            ? "Cannot reach backend server."
             : err.status === 403
               ? "Admin role required to load department budgets (HTTP 403)."
               : `Unable to load departments from database (HTTP ${err.status})${serverMsg}`;
@@ -503,6 +516,19 @@ export class OverviewComponent implements OnInit {
 
       this.finishInitialLoad();
     });
+  }
+
+  private resetPagers() {
+    this.managerPendingPager.reset();
+    this.financeTravelPager.reset();
+    this.financeClaimsPager.reset();
+    this.employeeRequestsPager.reset();
+    this.employeeClaimsPager.reset();
+    this.overviewDeptPager.reset();
+    this.recentAuditPager.reset();
+    this.budgetDeptPager.reset();
+    this.compliancePolicyPager.reset();
+    this.complianceAuditPager.reset();
   }
 
   private finishInitialLoad() {

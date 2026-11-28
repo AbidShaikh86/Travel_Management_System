@@ -2,7 +2,7 @@
   @if (backendOffline()) {
     <app-not-found
       mode="offline"
-      detail="http://localhost:6969/api/finance/reimbursement"
+      detail="/finance/reimbursement"
       (retry)="loadReimbursements()" />
   } @else {
   <header class="page-header">
@@ -62,7 +62,7 @@
         aria-label="Search reimbursement claims"
         placeholder="Employee, claim #, or trip #..."
         [value]="searchQuery()"
-        (input)="searchQuery.set($any($event.target).value)" />
+        (input)="onSearchInput($any($event.target).value)" />
     </mat-form-field>
   </div>
 
@@ -112,7 +112,7 @@
                 </tr>
               </thead>
               <tbody>
-                @for (r of filteredItems(); track r.id) {
+                @for (r of claimsPager.items(); track r.id) {
                   <tr [class.row-selected]="selectedClaim()?.id === r.id">
                     <td class="mono" style="color:var(--text-muted);font-weight:600">#{{ r.id }}</td>
                     <td>
@@ -156,6 +156,14 @@
                 }
               </tbody>
             </table>
+            <app-pagination
+              [totalItems]="claimsPager.totalItems()"
+              [pageIndex]="claimsPager.safePageIndex()"
+              [pageSize]="claimsPager.pageSize()"
+              [pageSizeOptions]="[5, 10, 20, 50]"
+              itemLabel="claims"
+              (pageChange)="claimsPager.setPage($event)"
+              (pageSizeChange)="claimsPager.setPageSize($event)" />
           </div>
         }
       </div>
@@ -239,7 +247,7 @@
                       </tr>
                     </thead>
                     <tbody>
-                      @for (e of claim.expenses; track e.id) {
+                      @for (e of claimReceiptsPager.items(); track e.id) {
                         <tr>
                           <td><span class="pill">{{ e.category }}</span></td>
                           <td class="num mono" style="text-align:right"><strong>{{ formatCurrency(e.amount) }}</strong></td>
@@ -279,6 +287,14 @@
                       }
                     </tbody>
                   </table>
+                  <app-pagination
+                    [totalItems]="claimReceiptsPager.totalItems()"
+                    [pageIndex]="claimReceiptsPager.safePageIndex()"
+                    [pageSize]="claimReceiptsPager.pageSize()"
+                    [compact]="true"
+                    [hideOnSinglePage]="true"
+                    itemLabel="receipts"
+                    (pageChange)="claimReceiptsPager.setPage($event)" />
                 </div>
               }
             </div>

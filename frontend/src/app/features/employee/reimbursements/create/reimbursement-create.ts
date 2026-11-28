@@ -11,6 +11,7 @@ import { ToastService } from "../../../../core/service/toast.service";
 import { NotFoundComponent } from "../../../../shared/components/not-found/not-found";
 import { extractApiErrorMessage, isBackendOfflineError } from "../../../../core/utils/http-error.util";
 import { animatePageIn } from "../../../../shared/animations/gsap.animations";
+import { environment } from '../../../../../environments/environment';
 
 @Component({
   selector: "app-reimbursement-create",
@@ -58,7 +59,7 @@ export class ReimbursementCreateComponent implements AfterViewInit, OnInit {
     this._loading.set(true);
     this.backendOffline.set(false);
     this.loadError.set(null);
-    this.http.get<any[]>("http://localhost:6969/api/employee/requests").subscribe({
+    this.http.get<any[]>(`${environment.apiUrl}/employee/requests`).subscribe({
       next: (data) => {
         this.eligibleTrips = Array.isArray(data)
           ? data.filter((t: any) => t.status === "APPROVED" || t.status === "COMPLETED")
@@ -104,7 +105,7 @@ export class ReimbursementCreateComponent implements AfterViewInit, OnInit {
       comment: this.form.value.comment || ""
     };
 
-    this.http.post("http://localhost:6969/api/employee/reimbursement/create", payload).subscribe({
+    this.http.post(`${environment.apiUrl}/employee/reimbursement/create`, payload).subscribe({
       next: () => {
         this._submitting.set(false);
         this.toast.success("Reimbursement claim draft created.");

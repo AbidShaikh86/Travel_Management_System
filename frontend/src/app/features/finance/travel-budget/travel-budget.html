@@ -2,7 +2,7 @@
   @if (backendOffline()) {
     <app-not-found
       mode="offline"
-      detail="http://localhost:6969/api/finance/request/all"
+      detail="/finance/request/all"
       (retry)="loadTravelRequests()" />
   } @else {
   <header class="page-header">
@@ -62,7 +62,7 @@
         aria-label="Search travel requests"
         placeholder="Search city, purpose, or trip #..."
         [value]="searchQuery()"
-        (input)="searchQuery.set($any($event.target).value)" />
+        (input)="onSearchInput($any($event.target).value)" />
     </mat-form-field>
   </div>
 
@@ -113,7 +113,7 @@
                 </tr>
               </thead>
               <tbody>
-                @for (r of filteredRequests(); track r.id) {
+                @for (r of travelPager.items(); track r.id) {
                   <tr [class.row-selected]="selected()?.id === r.id">
                     <td>
                       <div class="trip-id-cell">
@@ -157,6 +157,14 @@
                 }
               </tbody>
             </table>
+            <app-pagination
+              [totalItems]="travelPager.totalItems()"
+              [pageIndex]="travelPager.safePageIndex()"
+              [pageSize]="travelPager.pageSize()"
+              [pageSizeOptions]="[5, 10, 20, 50]"
+              itemLabel="trips"
+              (pageChange)="travelPager.setPage($event)"
+              (pageSizeChange)="travelPager.setPageSize($event)" />
           </div>
         }
       </div>

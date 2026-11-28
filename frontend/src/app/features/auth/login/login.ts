@@ -10,6 +10,7 @@ import { MatProgressSpinnerModule } from "@angular/material/progress-spinner";
 import { AuthService } from "../../../core/service/auth.service";
 import { ThemeService } from "../../../core/service/theme.service";
 import { isBackendOfflineError } from "../../../core/utils/http-error.util";
+import { environment } from "../../../../environments/environment";
 import { animateRouteManifest, animateThemeSwitch, prefersReducedMotion } from "../../../shared/animations/gsap.animations";
 
 @Component({
@@ -97,7 +98,7 @@ export class LoginComponent implements AfterViewInit {
       error: (err) => {
         this.loading.set(false);
         if (isBackendOfflineError(err)) {
-          this.errorMsg.set("Backend server is offline (http://localhost:6969 unreachable). Start the server and try again.");
+          this.errorMsg.set(`Backend server is offline (${environment.apiUrl} unreachable). Start the server and try again.`);
           return;
         }
         const msg = err?.error?.message || err?.error?.error || "Invalid email or password. Please try again.";

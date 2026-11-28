@@ -11,6 +11,7 @@ import { toSignal } from "@angular/core/rxjs-interop";
 import { MatCardModule } from "@angular/material/card";
 import { MatButtonModule } from "@angular/material/button";
 import { AuthService } from "../../../core/service/auth.service";
+import { environment } from "../../../../environments/environment";
 
 export type StatusPageMode = "not-found" | "offline";
 
@@ -61,7 +62,7 @@ export class NotFoundComponent {
     const custom = this.message().trim();
     if (custom) return custom;
     return this.isOffline()
-      ? "Unable to reach the TravelDesk API at http://localhost:6969. Live records cannot be loaded while the server is offline."
+      ? `Unable to reach the TravelDesk API at ${environment.apiUrl}. Live records cannot be loaded while the server is offline.`
       : "The page you requested could not be found or is no longer available.";
   });
 
@@ -69,6 +70,21 @@ export class NotFoundComponent {
     const explicit = this.showRetry();
     if (explicit !== undefined) return explicit;
     return this.isOffline();
+  });
+
+  readonly resolvedDetail = computed(() => {
+    const raw = this.detail().trim();
+    const base = environment.apiUrl.replace(/\/+$/, "");
+    if (!raw || raw === "/") {
+      return this.isOffline() ? base : "Route not matched";
+    }
+    if (/^https?:\/\//i.test(raw) || raw.startsWith(base)) {
+      return raw;
+    }
+    if (raw.startsWith("/")) {
+      return `${base}${raw}`;
+    }
+    return raw;
   });
 
   onRetry() {

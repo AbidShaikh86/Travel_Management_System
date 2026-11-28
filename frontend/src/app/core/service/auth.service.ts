@@ -1,6 +1,7 @@
 import { HttpClient } from '@angular/common/http';
 import { inject, Injectable, signal } from '@angular/core';
 import { catchError, map, Observable, of, tap } from 'rxjs';
+import { environment } from '../../../environments/environment';
 
 export interface UserSession {
   email: string;
@@ -42,7 +43,7 @@ export interface LoginResponse {
   providedIn: 'root'
 })
 export class AuthService {
-  private apiUrl = 'http://localhost:6969/api/auth';
+  private apiUrl = `${environment.apiUrl}/auth`;
   private http = inject(HttpClient);
 
   currentUser = signal<UserSession | null>(this.loadStoredUser());
@@ -130,7 +131,7 @@ export class AuthService {
   }
 
   fetchProfile(): Observable<EmployeeProfileResponse> {
-    return this.http.get<EmployeeProfileResponse>('http://localhost:6969/api/employee/profile').pipe(
+    return this.http.get<EmployeeProfileResponse>(`${environment.apiUrl}/employee/profile`).pipe(
       tap((profile) => {
         if (!profile) return;
         const current = this.currentUser();

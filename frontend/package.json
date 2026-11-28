@@ -4,11 +4,14 @@
   "scripts": {
     "ng": "ng",
     "start": "ng serve",
-    "build": "ng build",
+    "build": "ng build && node scripts/generate-env.mjs",
     "watch": "ng build --watch --configuration development",
     "test": "ng test"
   },
   "private": true,
+  "engines": {
+    "node": ">=22.22.3"
+  },
   "packageManager": "npm@11.17.0",
   "dependencies": {
     "@angular/cdk": "^22.3.0",

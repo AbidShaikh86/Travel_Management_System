@@ -329,4 +329,44 @@ describe("OverviewComponent", () => {
 
     auth.currentUser.set(null);
   });
+
+  it("paginates dashboard cards when items exceed page size", () => {
+    const auth = TestBed.inject(AuthService);
+    auth.currentUser.set({ email: "mgr@company.com", role: "MANAGER", name: "Rohan" });
+
+    const fixture = TestBed.createComponent(OverviewComponent);
+    fixture.detectChanges();
+
+    const sevenRequests = Array.from({ length: 7 }, (_, i) => ({
+      id: i + 1,
+      travelDetail: {
+        id: 100 + i,
+        destination: `City-${i + 1}`,
+        stay: 2,
+        estimatedBudget: 10000 + i * 500,
+        isFlagged: false,
+        user: { name: `Traveler ${i + 1}` }
+      }
+    }));
+
+    httpMock.expectOne("http://localhost:6969/api/manager/pending").flush(sevenRequests);
+    fixture.detectChanges();
+
+    const el = fixture.nativeElement as HTMLElement;
+    expect(el.textContent).toContain("City-1");
+    expect(el.textContent).toContain("City-5");
+    expect(el.textContent).not.toContain("City-6");
+    expect(el.textContent).toContain("Page 1 / 2");
+
+    const nextBtn = el.querySelector('button[aria-label="Next page"]') as HTMLButtonElement;
+    nextBtn.click();
+    fixture.detectChanges();
+
+    expect(el.textContent).not.toContain("City-1");
+    expect(el.textContent).toContain("City-6");
+    expect(el.textContent).toContain("City-7");
+    expect(el.textContent).toContain("Page 2 / 2");
+
+    auth.currentUser.set(null);
+  });
 });

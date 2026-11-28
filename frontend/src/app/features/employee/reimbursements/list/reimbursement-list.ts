@@ -8,8 +8,10 @@ import { MatInputModule } from "@angular/material/input";
 import { MatSelectModule } from "@angular/material/select";
 import { MatProgressSpinnerModule } from "@angular/material/progress-spinner";
 import { NotFoundComponent } from "../../../../shared/components/not-found/not-found";
+import { PaginationComponent, createPagination } from "../../../../shared/components/pagination/pagination";
 import { extractApiErrorMessage, isBackendOfflineError } from "../../../../core/utils/http-error.util";
 import { animatePageIn, animateStagger } from "../../../../shared/animations/gsap.animations";
+import { environment } from '../../../../../environments/environment';
 
 export interface ReimbursementItem {
   id: number;
@@ -31,6 +33,7 @@ export interface ReimbursementItem {
     RouterLink,
     FormsModule,
     NotFoundComponent,
+    PaginationComponent,
     MatButtonModule,
     MatFormFieldModule,
     MatInputModule,
@@ -55,8 +58,38 @@ export class ReimbursementListComponent implements AfterViewInit {
     this.itemsSignal().reduce((acc, item) => acc + this.totalExpenses(item), 0)
   );
 
-  selectedFilter = "ALL";
-  searchQuery = "";
+  private readonly _selectedFilter = signal("ALL");
+  private readonly _searchQuery = signal("");
+
+  get selectedFilter(): string { return this._selectedFilter(); }
+  set selectedFilter(value: string) {
+    this._selectedFilter.set(value);
+    this.reimbursementsPager.reset();
+  }
+
+  get searchQuery(): string { return this._searchQuery(); }
+  set searchQuery(value: string) {
+    this._searchQuery.set(value);
+    this.reimbursementsPager.reset();
+  }
+
+  readonly filteredItemsList = computed<ReimbursementItem[]>(() => {
+    const filter = this._selectedFilter();
+    const q = this._searchQuery().toLowerCase().trim();
+    return this.itemsSignal().filter((item) => {
+      const matchesFilter = filter === "ALL" || item.status === filter;
+      const dest = (item.travelDestination || item.travelDetail?.destination || "").toLowerCase();
+      const tripId = String(item.travelDetailId ?? item.travelDetail?.id ?? "");
+      const matchesSearch =
+        !q ||
+        dest.includes(q) ||
+        tripId.includes(q) ||
+        String(item.id).includes(q);
+      return matchesFilter && matchesSearch;
+    });
+  });
+
+  readonly reimbursementsPager = createPagination(() => this.filteredItemsList(), 10);
 
   get loading(): boolean { return this.loadingSignal(); }
   get error(): string | null { return this.errorSignal(); }
@@ -73,7 +106,7 @@ export class ReimbursementListComponent implements AfterViewInit {
     this.loadingSignal.set(true);
     this.backendOffline.set(false);
     this.errorSignal.set(null);
-    this.http.get<ReimbursementItem[]>("http://localhost:6969/api/employee/reimbursements").subscribe({
+    this.http.get<ReimbursementItem[]>(`${environment.apiUrl}/employee/reimbursements`).subscribe({
       next: (data) => {
         this.itemsSignal.set(Array.isArray(data) ? data : []);
         this.loadingSignal.set(false);
@@ -101,19 +134,7 @@ export class ReimbursementListComponent implements AfterViewInit {
   }
 
   get filteredItems(): ReimbursementItem[] {
-    const filter = this.selectedFilter;
-    const q = this.searchQuery.toLowerCase().trim();
-    return this.itemsSignal().filter((item) => {
-      const matchesFilter = filter === "ALL" || item.status === filter;
-      const dest = (item.travelDestination || item.travelDetail?.destination || "").toLowerCase();
-      const tripId = String(item.travelDetailId ?? item.travelDetail?.id ?? "");
-      const matchesSearch =
-        !q ||
-        dest.includes(q) ||
-        tripId.includes(q) ||
-        String(item.id).includes(q);
-      return matchesFilter && matchesSearch;
-    });
+    return this.filteredItemsList();
   }
 
   totalExpenses(r: ReimbursementItem): number {

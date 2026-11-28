@@ -2,7 +2,7 @@
   @if (backendOffline()) {
     <app-not-found
       mode="offline"
-      detail="http://localhost:6969/api/employee/reimbursements"
+      detail="/employee/reimbursements"
       (retry)="loadReimbursements()" />
   } @else {
   <header class="page-header">
@@ -92,7 +92,7 @@
           </tr>
         </thead>
         <tbody>
-          @for (r of filteredItems; track r.id) {
+          @for (r of reimbursementsPager.items(); track r.id) {
             <tr>
               <td class="mono" style="color:var(--text-muted);font-weight:600">#{{ r.id }}</td>
               <td>
@@ -122,6 +122,14 @@
           }
         </tbody>
       </table>
+      <app-pagination
+        [totalItems]="reimbursementsPager.totalItems()"
+        [pageIndex]="reimbursementsPager.safePageIndex()"
+        [pageSize]="reimbursementsPager.pageSize()"
+        [pageSizeOptions]="[5, 10, 20, 50]"
+        itemLabel="claims"
+        (pageChange)="reimbursementsPager.setPage($event)"
+        (pageSizeChange)="reimbursementsPager.setPageSize($event)" />
     </div>
   }
   }

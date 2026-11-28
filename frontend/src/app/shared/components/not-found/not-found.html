@@ -37,7 +37,7 @@
       <div class="status-meta-row">
         <span class="status-meta-key">{{ isOffline() ? 'Endpoint' : 'Diagnostic' }}</span>
         <span class="status-meta-val mono">
-          {{ detail() || (isOffline() ? 'http://localhost:6969/api' : 'Route not matched') }}
+          {{ resolvedDetail() }}
         </span>
       </div>
     </div>

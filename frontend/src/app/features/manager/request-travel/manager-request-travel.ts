@@ -25,6 +25,7 @@ import { animatePageIn } from "../../../shared/animations/gsap.animations";
 import { NotFoundComponent } from "../../../shared/components/not-found/not-found";
 import { ToastService } from "../../../core/service/toast.service";
 import { extractApiErrorMessage, isBackendOfflineError } from "../../../core/utils/http-error.util";
+import { environment } from "../../../../environments/environment";
 
 export interface TeamMember {
   id: number;
@@ -142,7 +143,7 @@ export class ManagerRequestTravelComponent implements OnInit {
     this.backendOffline.set(false);
     this.apiError.set(null);
 
-    this.http.get<TeamMember[]>("http://localhost:6969/api/manager/team").subscribe({
+    this.http.get<TeamMember[]>(`${environment.apiUrl}/manager/team`).subscribe({
       next: (rows) => {
         this.loadingTeam.set(false);
         const list = Array.isArray(rows)
@@ -206,7 +207,7 @@ export class ManagerRequestTravelComponent implements OnInit {
       comment: formVal.managerNotes?.trim() || "Manager-initiated travel assignment."
     };
 
-    this.http.post<any>("http://localhost:6969/api/manager/assign-travel", payload).subscribe({
+    this.http.post<any>(`${environment.apiUrl}/manager/assign-travel`, payload).subscribe({
       next: () => {
         this.toast.success("Travel assigned and approved.");
         this.finishSubmit();

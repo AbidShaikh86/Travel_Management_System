@@ -11,6 +11,7 @@ import { ToastService } from "../../../../core/service/toast.service";
 import { NotFoundComponent } from "../../../../shared/components/not-found/not-found";
 import { extractApiErrorMessage, isBackendOfflineError } from "../../../../core/utils/http-error.util";
 import { animatePageIn, animateStagger } from "../../../../shared/animations/gsap.animations";
+import { environment } from '../../../../../environments/environment';
 
 export type TravelMode = "FLIGHT" | "TRAIN" | "OWN_VEHICLE";
 
@@ -135,7 +136,7 @@ export class TravelRequestCreateComponent implements OnInit, AfterViewInit {
       justification?: string;
     } | null;
 
-    this.http.get<TravelApiDetail>(`http://localhost:6969/api/employee/request/${id}`).subscribe({
+    this.http.get<TravelApiDetail>(`${environment.apiUrl}/employee/request/${id}`).subscribe({
       next: (res) => {
         if (res.status && res.status !== "DRAFT") {
           this.loadingDraft.set(false);
@@ -256,7 +257,7 @@ export class TravelRequestCreateComponent implements OnInit, AfterViewInit {
     const draftId = this.editId();
     if (draftId !== null) {
       this.http.patch<{ process?: boolean; message?: string }>(
-        `http://localhost:6969/api/employee/request/${draftId}/update`,
+        `${environment.apiUrl}/employee/request/${draftId}/update`,
         {
           ...payload,
           status: isDraft ? "DRAFT" : "PENDING"
@@ -277,7 +278,7 @@ export class TravelRequestCreateComponent implements OnInit, AfterViewInit {
       return;
     }
 
-    this.http.post("http://localhost:6969/api/employee/request", payload).subscribe({
+    this.http.post(`${environment.apiUrl}/employee/request`, payload).subscribe({
       next: () => {
         this._submitting.set(false);
         this.toast.success(isDraft ? "Travel draft saved." : "Travel request submitted for approval.");

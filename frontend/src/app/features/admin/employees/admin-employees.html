@@ -2,7 +2,7 @@
   @if (backendOffline()) {
     <app-not-found
       mode="offline"
-      detail="http://localhost:6969/api/admin/employees"
+      detail="/admin/employees"
       (retry)="retryAll()" />
   } @else {
   <header class="page-header">
@@ -86,7 +86,7 @@
           </tr>
         </thead>
         <tbody>
-          @for (e of filteredEmployees; track e.id) {
+          @for (e of employeesPager.items(); track e.id) {
             <tr>
               <td>
                 <div class="flex items-center gap-3">
@@ -113,6 +113,14 @@
           }
         </tbody>
       </table>
+      <app-pagination
+        [totalItems]="employeesPager.totalItems()"
+        [pageIndex]="employeesPager.safePageIndex()"
+        [pageSize]="employeesPager.pageSize()"
+        [pageSizeOptions]="[5, 10, 20, 50]"
+        itemLabel="employees"
+        (pageChange)="employeesPager.setPage($event)"
+        (pageSizeChange)="employeesPager.setPageSize($event)" />
     </div>
   }
   }

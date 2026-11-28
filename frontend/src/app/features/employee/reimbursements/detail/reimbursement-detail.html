@@ -2,7 +2,7 @@
   @if (backendOffline()) {
     <app-not-found
       mode="offline"
-      [detail]="'http://localhost:6969/api/employee/reimbursement/' + id"
+      [detail]="'/employee/reimbursement/' + id"
       (retry)="loadDetail()" />
   } @else {
   <div style="margin-bottom:16px">
@@ -135,7 +135,7 @@
                 </tr>
               </thead>
               <tbody>
-                @for (e of item.expenses; track e.id) {
+                @for (e of expensesPager.items(); track e.id) {
                   <tr>
                     <td><span class="pill" style="font-size:11px">{{ e.category }}</span></td>
                     <td><strong>{{ formatCurrency(e.amount) }}</strong></td>
@@ -158,6 +158,15 @@
                 }
               </tbody>
             </table>
+            <app-pagination
+              [totalItems]="expensesPager.totalItems()"
+              [pageIndex]="expensesPager.safePageIndex()"
+              [pageSize]="expensesPager.pageSize()"
+              [pageSizeOptions]="[5, 10, 20]"
+              [hideOnSinglePage]="true"
+              itemLabel="receipts"
+              (pageChange)="expensesPager.setPage($event)"
+              (pageSizeChange)="expensesPager.setPageSize($event)" />
           }
         </div>
       </div>

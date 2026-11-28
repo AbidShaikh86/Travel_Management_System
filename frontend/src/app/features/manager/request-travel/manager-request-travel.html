@@ -2,7 +2,7 @@
   @if (backendOffline()) {
     <app-not-found
       mode="offline"
-      detail="http://localhost:6969/api/manager/team"
+      detail="/manager/team"
       (retry)="fetchTeam()" />
   } @else {
   <header class="page-header">

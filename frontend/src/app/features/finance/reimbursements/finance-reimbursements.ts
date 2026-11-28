@@ -23,7 +23,10 @@ import { MatInputModule } from "@angular/material/input";
 import { MatProgressSpinnerModule } from "@angular/material/progress-spinner";
 import { ToastService } from "../../../core/service/toast.service";
 import { NotFoundComponent } from "../../../shared/components/not-found/not-found";
+import { PaginationComponent, createPagination } from "../../../shared/components/pagination/pagination";
 import { extractApiErrorMessage, isBackendOfflineError } from "../../../core/utils/http-error.util";
+import { resolveReceiptFileUrl } from "../../../core/utils/api-url.util";
+import { environment } from "../../../../environments/environment";
 import {
   animateDrawerIn,
   animateInspectorSwap,
@@ -62,6 +65,7 @@ export type ClaimTab = "ALL" | "PENDING" | "APPROVED" | "PAID" | "REJECTED";
   selector: "app-finance-reimbursements",
   imports: [
     NotFoundComponent,
+    PaginationComponent,
     MatButtonModule,
     MatFormFieldModule,
     MatInputModule,
@@ -145,6 +149,9 @@ export class FinanceReimbursementsComponent implements OnInit, OnDestroy {
     });
   });
 
+  readonly claimsPager = createPagination(() => this.filteredItems(), 10);
+  readonly claimReceiptsPager = createPagination(() => this.selectedClaim()?.expenses ?? [], 5);
+
   private hasEntered = false;
   private activeDetailId: number | null = null;
 
@@ -175,7 +182,7 @@ export class FinanceReimbursementsComponent implements OnInit, OnDestroy {
     this.backendOffline.set(false);
     this.error.set(null);
 
-    this.http.get<FinanceClaimItem[]>("http://localhost:6969/api/finance/reimbursement").subscribe({
+    this.http.get<FinanceClaimItem[]>(`${environment.apiUrl}/finance/reimbursement`).subscribe({
       next: (data) => {
         this.itemsSignal.set(Array.isArray(data) ? data : []);
         this.finishLoad();
@@ -217,6 +224,7 @@ export class FinanceReimbursementsComponent implements OnInit, OnDestroy {
   setActiveTab(tab: ClaimTab) {
     if (this.activeTab() === tab) return;
     this.activeTab.set(tab);
+    this.claimsPager.reset();
 
     afterNextRender(() => {
       this.syncTabIndicator(false);
@@ -224,6 +232,11 @@ export class FinanceReimbursementsComponent implements OnInit, OnDestroy {
       if (panel) animatePageIn(panel);
       this.animateRows();
     }, { injector: this.injector });
+  }
+
+  onSearchInput(value: string) {
+    this.searchQuery.set(value);
+    this.claimsPager.reset();
   }
 
   onTabKeydown(event: KeyboardEvent, index: number) {
@@ -237,6 +250,7 @@ export class FinanceReimbursementsComponent implements OnInit, OnDestroy {
 
   resetFilters() {
     this.searchQuery.set("");
+    this.claimsPager.reset();
     this.setActiveTab("ALL");
   }
 
@@ -253,6 +267,7 @@ export class FinanceReimbursementsComponent implements OnInit, OnDestroy {
   open(item: FinanceClaimItem) {
     const wasOpen = Boolean(this.selectedClaim());
     this.clearPreview();
+    this.claimReceiptsPager.reset();
     this.selectedClaim.set(item);
     this.fetchClaimDetail(item.id);
 
@@ -270,7 +285,7 @@ export class FinanceReimbursementsComponent implements OnInit, OnDestroy {
     this.detailLoading.set(true);
     this.detailError.set(null);
 
-    this.http.get<FinanceClaimItem>(`http://localhost:6969/api/finance/reimbursement/${id}`).subscribe({
+    this.http.get<FinanceClaimItem>(`${environment.apiUrl}/finance/reimbursement/${id}`).subscribe({
       next: (detail) => {
         if (this.activeDetailId !== id) return;
         this.detailLoading.set(false);
@@ -340,7 +355,7 @@ export class FinanceReimbursementsComponent implements OnInit, OnDestroy {
     this.submittingDecision.set(decision);
 
     this.http
-      .patch<any>(`http://localhost:6969/api/finance/reimbursement/${claim.id}/status-update`, { status: decision })
+      .patch<any>(`${environment.apiUrl}/finance/reimbursement/${claim.id}/status-update`, { status: decision })
       .subscribe({
         next: () => {
           this.submittingDecision.set(null);
@@ -366,7 +381,7 @@ export class FinanceReimbursementsComponent implements OnInit, OnDestroy {
     if (this.payingClaimId() !== null) return;
     this.payingClaimId.set(item.id);
 
-    this.http.patch<any>(`http://localhost:6969/api/finance/reimbursement/${item.id}/paid`, {}).subscribe({
+    this.http.patch<any>(`${environment.apiUrl}/finance/reimbursement/${item.id}/paid`, {}).subscribe({
       next: () => {
         this.payingClaimId.set(null);
         this.itemsSignal.update((list) =>
@@ -566,17 +581,7 @@ export class FinanceReimbursementsComponent implements OnInit, OnDestroy {
   }
 
   resolveProofUrl(claimId: number, proofPath: string): string {
-    const trimmed = proofPath.trim();
-    if (/^https?:\/\//i.test(trimmed)) {
-      return trimmed;
-    }
-    if (trimmed.startsWith("/api/files/")) {
-      return `http://localhost:6969${trimmed}`;
-    }
-    if (trimmed.startsWith("api/files/")) {
-      return `http://localhost:6969/${trimmed}`;
-    }
-    return `http://localhost:6969/api/files/${claimId}/${trimmed.replace(/^\/+/, "")}`;
+    return resolveReceiptFileUrl(claimId, proofPath);
   }
 
   proofDisplayName(proofPath?: string | null): string {

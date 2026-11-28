@@ -8,7 +8,9 @@ import { MatSelectModule } from "@angular/material/select";
 import { MatCheckboxModule } from "@angular/material/checkbox";
 import { MatProgressSpinnerModule } from "@angular/material/progress-spinner";
 import { ToastService } from "../../../core/service/toast.service";
+import { environment } from '../../../../environments/environment';
 import { NotFoundComponent } from "../../../shared/components/not-found/not-found";
+import { PaginationComponent, createPagination } from "../../../shared/components/pagination/pagination";
 import { extractApiErrorMessage, isBackendOfflineError } from "../../../core/utils/http-error.util";
 import { animatePageIn, animateModalIn, animateStagger } from "../../../shared/animations/gsap.animations";
 
@@ -29,6 +31,7 @@ export interface PolicyItem {
   imports: [
     ReactiveFormsModule,
     NotFoundComponent,
+    PaginationComponent,
     MatButtonModule,
     MatFormFieldModule,
     MatInputModule,
@@ -67,6 +70,7 @@ export class AdminPoliciesComponent implements AfterViewInit, OnInit {
   };
 
   readonly localPoliciesSignal = signal<PolicyItem[]>([]);
+  readonly policiesPager = createPagination(() => this.localPoliciesSignal(), 10);
   readonly activePolicyCount = computed(() =>
     this.localPoliciesSignal().filter((p) => p.active !== false).length
   );
@@ -93,7 +97,7 @@ export class AdminPoliciesComponent implements AfterViewInit, OnInit {
     this.loadingPolicies.set(true);
     this.backendOffline.set(false);
     this.apiError.set(null);
-    this.http.get<PolicyItem[]>("http://localhost:6969/api/admin/policy").subscribe({
+    this.http.get<PolicyItem[]>(`${environment.apiUrl}/admin/policy`).subscribe({
       next: (data) => {
         this.loadingPolicies.set(false);
         this.localPoliciesSignal.set(Array.isArray(data) ? data : []);
@@ -207,7 +211,7 @@ export class AdminPoliciesComponent implements AfterViewInit, OnInit {
     });
 
     this.loadingPolicyDetails.set(true);
-    this.http.get<PolicyItem>(`http://localhost:6969/api/admin/policy/${p.id}`).subscribe({
+    this.http.get<PolicyItem>(`${environment.apiUrl}/admin/policy/${p.id}`).subscribe({
       next: (fullData) => {
         this.loadingPolicyDetails.set(false);
         if (fullData) {
@@ -263,7 +267,7 @@ export class AdminPoliciesComponent implements AfterViewInit, OnInit {
         active: formVal.active ?? true
       };
 
-      this.http.patch<any>(`http://localhost:6969/api/admin/policy/${policyId}/update`, updatePayload).subscribe({
+      this.http.patch<any>(`${environment.apiUrl}/admin/policy/${policyId}/update`, updatePayload).subscribe({
         next: () => {
           this._submitting.set(false);
           this.toast.success("Travel policy updated.");
@@ -283,7 +287,7 @@ export class AdminPoliciesComponent implements AfterViewInit, OnInit {
         comment: formVal.comment?.trim() || ""
       };
 
-      this.http.post<any>("http://localhost:6969/api/admin/policy", createPayload).subscribe({
+      this.http.post<any>(`${environment.apiUrl}/admin/policy`, createPayload).subscribe({
         next: () => {
           this._submitting.set(false);
           this.toast.success("New travel policy created.");

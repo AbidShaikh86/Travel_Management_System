@@ -2,7 +2,7 @@
   @if (backendOffline()) {
     <app-not-found
       mode="offline"
-      detail="http://localhost:6969/api/employee/requests"
+      detail="/employee/requests"
       (retry)="loadRequests()" />
   } @else {
   <header class="page-header">
@@ -97,7 +97,7 @@
                 </tr>
               </thead>
               <tbody>
-                @for (r of filteredRequests; track r.id) {
+                @for (r of requestsPager.items(); track r.id) {
                   <tr [class.row-selected]="selectedRequest?.id === r.id">
                     <td class="mono" style="color:var(--text-muted);font-weight:600">#{{ r.id }}</td>
                     <td>
@@ -141,6 +141,14 @@
                 }
               </tbody>
             </table>
+            <app-pagination
+              [totalItems]="requestsPager.totalItems()"
+              [pageIndex]="requestsPager.safePageIndex()"
+              [pageSize]="requestsPager.pageSize()"
+              [pageSizeOptions]="[5, 10, 20, 50]"
+              itemLabel="requests"
+              (pageChange)="requestsPager.setPage($event)"
+              (pageSizeChange)="requestsPager.setPageSize($event)" />
           </div>
         }
       </div>

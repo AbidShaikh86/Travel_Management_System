@@ -2,7 +2,7 @@
   @if (backendOffline()) {
     <app-not-found
       mode="offline"
-      [detail]="'http://localhost:6969/api/employee/request/' + editId()"
+      [detail]="'/employee/request/' + editId()"
       (retry)="loadDraftForEdit(editId()!)" />
   } @else {
   <header class="page-header">

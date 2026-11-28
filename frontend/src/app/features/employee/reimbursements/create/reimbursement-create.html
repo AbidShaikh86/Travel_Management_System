@@ -2,7 +2,7 @@
   @if (backendOffline()) {
     <app-not-found
       mode="offline"
-      detail="http://localhost:6969/api/employee/requests"
+      detail="/employee/requests"
       (retry)="loadEligibleTrips()" />
   } @else {
   <div class="page-header">

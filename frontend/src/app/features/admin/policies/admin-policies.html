@@ -2,7 +2,7 @@
   @if (backendOffline()) {
     <app-not-found
       mode="offline"
-      detail="http://localhost:6969/api/admin/policy"
+      detail="/admin/policy"
       (retry)="loadPolicies()" />
   } @else {
   <header class="page-header">
@@ -76,7 +76,7 @@
             </tr>
           </thead>
           <tbody>
-            @for (p of localPolicies; track p.id ?? p.name) {
+            @for (p of policiesPager.items(); track p.id ?? p.name) {
               <tr>
                 <td><strong>{{ p.name }}</strong></td>
                 <td>
@@ -102,6 +102,14 @@
           </tbody>
         </table>
       </div>
+      <app-pagination
+        [totalItems]="policiesPager.totalItems()"
+        [pageIndex]="policiesPager.safePageIndex()"
+        [pageSize]="policiesPager.pageSize()"
+        [pageSizeOptions]="[5, 10, 20, 50]"
+        itemLabel="policies"
+        (pageChange)="policiesPager.setPage($event)"
+        (pageSizeChange)="policiesPager.setPageSize($event)" />
     </div>
   }
 

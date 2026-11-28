@@ -1,0 +1,102 @@
+@if (shouldRender()) {
+  <nav
+    class="pg-bar"
+    [class.pg-compact]="compact()"
+    [attr.aria-label]="'Pagination for ' + itemLabel()">
+    <div class="pg-range num">
+      @if (compact()) {
+        <span>{{ startItem() }}&ndash;{{ endItem() }} of {{ totalItems() }}</span>
+      } @else {
+        <span>
+          Showing <strong>{{ startItem() }}&ndash;{{ endItem() }}</strong> of
+          <strong>{{ totalItems() }}</strong> {{ itemLabel() }}
+        </span>
+      }
+    </div>
+
+    <div class="pg-controls">
+      @if (!compact() && pageSizeOptions().length > 1) {
+        <label class="pg-size-label">
+          <span>Rows</span>
+          <select
+            class="pg-select num"
+            [value]="pageSize()"
+            (change)="onPageSizeSelect($event)"
+            [attr.aria-label]="'Rows per page for ' + itemLabel()">
+            @for (opt of pageSizeOptions(); track opt) {
+              <option [value]="opt" [selected]="opt === pageSize()">{{ opt }}</option>
+            }
+          </select>
+        </label>
+      }
+
+      <div class="pg-nav">
+        @if (!compact()) {
+          <button
+            type="button"
+            class="pg-btn pg-icon-btn"
+            [disabled]="isFirstPage()"
+            (click)="goToPage(0)"
+            aria-label="First page"
+            title="First page">
+            &laquo;
+          </button>
+        }
+
+        <button
+          type="button"
+          class="pg-btn pg-icon-btn"
+          [disabled]="isFirstPage()"
+          (click)="goToPage(safePageIndex() - 1)"
+          aria-label="Previous page"
+          title="Previous page">
+          &lsaquo;
+        </button>
+
+        @if (compact()) {
+          <span class="pg-page-readout num">
+            Page {{ safePageIndex() + 1 }} / {{ totalPages() }}
+          </span>
+        } @else {
+          @for (token of pageTokens(); track $index) {
+            @if (token === 'ellipsis') {
+              <span class="pg-ellipsis" aria-hidden="true">&hellip;</span>
+            } @else {
+              <button
+                type="button"
+                class="pg-btn pg-num-btn num"
+                [class.active]="token === safePageIndex()"
+                [attr.aria-current]="token === safePageIndex() ? 'page' : null"
+                [attr.aria-label]="'Page ' + (token + 1)"
+                (click)="goToPage(token)">
+                {{ token + 1 }}
+              </button>
+            }
+          }
+        }
+
+        <button
+          type="button"
+          class="pg-btn pg-icon-btn"
+          [disabled]="isLastPage()"
+          (click)="goToPage(safePageIndex() + 1)"
+          aria-label="Next page"
+          title="Next page">
+          &rsaquo;
+        </button>
+
+        @if (!compact()) {
+          <button
+            type="button"
+            class="pg-btn pg-icon-btn"
+            [disabled]="isLastPage()"
+            (click)="goToPage(totalPages() - 1)"
+            aria-label="Last page"
+            title="Last page">
+            &raquo;
+          </button>
+        }
+      </div>
+    </div>
+  </nav>
+}

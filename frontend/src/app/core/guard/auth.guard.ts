@@ -1,6 +1,7 @@
 import { inject } from '@angular/core';
 import { CanActivateChildFn, CanActivateFn, Router } from '@angular/router';
 import { AuthService } from '../service/auth.service';
+import { environment } from '../../../environments/environment';
 
 export const authGuard: CanActivateFn = (route, state) => {
   const authService = inject(AuthService);
@@ -50,9 +51,11 @@ export const roleGuard: CanActivateFn = (route, state) => {
   }
 
   const currentRole = authService.getRole() || 'UNKNOWN';
-  console.warn(
-    `[RoleGuard] Access denied to "${state.url}". Required roles: [${expectedRoles.join(', ')}], current user role: [${currentRole}]`
-  );
+  if (environment.enableDebugLogs) {
+    console.warn(
+      `[RoleGuard] Access denied to "${state.url}". Required roles: [${expectedRoles.join(', ')}], current user role: [${currentRole}]`
+    );
+  }
 
   router.navigate(['/dashboard/overview'], { queryParams: { unauthorized: '1' } });
   return false;

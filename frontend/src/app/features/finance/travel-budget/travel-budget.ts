@@ -23,7 +23,9 @@ import { MatSelectModule } from "@angular/material/select";
 import { MatProgressSpinnerModule } from "@angular/material/progress-spinner";
 import { ToastService } from "../../../core/service/toast.service";
 import { NotFoundComponent } from "../../../shared/components/not-found/not-found";
+import { PaginationComponent, createPagination } from "../../../shared/components/pagination/pagination";
 import { extractApiErrorMessage, isBackendOfflineError } from "../../../core/utils/http-error.util";
+import { environment } from "../../../../environments/environment";
 import {
   animateDrawerIn,
   animateInspectorSwap,
@@ -84,6 +86,7 @@ export type BudgetTab = "ALL" | "APPROVED" | "PENDING" | "FLAGGED" | "COMPLETED"
   imports: [
     ReactiveFormsModule,
     NotFoundComponent,
+    PaginationComponent,
     MatButtonModule,
     MatFormFieldModule,
     MatInputModule,
@@ -100,7 +103,7 @@ export class TravelBudgetComponent implements OnInit {
   private toast = inject(ToastService);
   private injector = inject(Injector);
   private destroyRef = inject(DestroyRef);
-  private readonly apiBase = "http://localhost:6969/api/finance";
+  private readonly apiBase = `${environment.apiUrl}/finance`;
 
   readonly rootRef = viewChild<ElementRef<HTMLElement>>("budgetRoot");
   readonly tabIndicator = viewChild<ElementRef<HTMLElement>>("tabIndicator");
@@ -172,6 +175,8 @@ export class TravelBudgetComponent implements OnInit {
       );
     });
   });
+
+  readonly travelPager = createPagination(() => this.filteredRequests(), 10);
 
   readonly form = this.fb.group({
     budget: [null as number | null, [Validators.required, Validators.min(0)]],
@@ -246,6 +251,7 @@ export class TravelBudgetComponent implements OnInit {
   setActiveTab(tab: BudgetTab) {
     if (this.activeTab() === tab) return;
     this.activeTab.set(tab);
+    this.travelPager.reset();
 
     afterNextRender(() => {
       this.syncTabIndicator(false);
@@ -253,6 +259,11 @@ export class TravelBudgetComponent implements OnInit {
       if (panel) animatePageIn(panel);
       this.animateRows();
     }, { injector: this.injector });
+  }
+
+  onSearchInput(value: string) {
+    this.searchQuery.set(value);
+    this.travelPager.reset();
   }
 
   onTabKeydown(event: KeyboardEvent, index: number) {
@@ -272,6 +283,7 @@ export class TravelBudgetComponent implements OnInit {
 
   resetFilters() {
     this.searchQuery.set("");
+    this.travelPager.reset();
     this.setActiveTab("ALL");
   }
 

@@ -2,7 +2,7 @@
   @if (backendOffline()) {
     <app-not-found
       mode="offline"
-      detail="http://localhost:6969/api/manager/pending"
+      detail="/manager/pending"
       (retry)="fetchPendingApprovals()" />
   } @else {
   <header class="page-header">
@@ -73,7 +73,7 @@
           aria-label="Filter requests by employee or destination"
           placeholder="Filter by name or city..."
           [value]="searchQuery()"
-          (input)="searchQuery.set($any($event.target).value)"/>
+          (input)="onSearchInput($any($event.target).value)"/>
       </mat-form-field>
     }
   </div>
@@ -123,7 +123,7 @@
                     </tr>
                   </thead>
                   <tbody>
-                    @for (entry of decidedSignal(); track entry.id) {
+                    @for (entry of historyPager.items(); track entry.id) {
                       <tr class="history-row" [class.row-selected]="selectedDetail()?.id === entry.travelId">
                         <td><strong>{{ entry.employeeName }}</strong></td>
                         <td>
@@ -149,6 +149,14 @@
                   </tbody>
                 </table>
               </div>
+              <app-pagination
+                [totalItems]="historyPager.totalItems()"
+                [pageIndex]="historyPager.safePageIndex()"
+                [pageSize]="historyPager.pageSize()"
+                [pageSizeOptions]="[5, 10, 20, 50]"
+                itemLabel="decisions"
+                (pageChange)="historyPager.setPage($event)"
+                (pageSizeChange)="historyPager.setPageSize($event)" />
             }
           </div>
         } @else {
@@ -159,7 +167,7 @@
                 <p>{{ activeTab() === 'FLAGGED' ? 'All pending requests sit within standard travel caps.' : 'No travel requests currently await your review.' }}</p>
               </div>
             } @else {
-              @for (item of filteredItems(); track item.id) {
+              @for (item of queuePager.items(); track item.id) {
                 <article
                   class="queue-row"
                   [class.row-selected]="detailTargetItem()?.id === item.id"
@@ -266,6 +274,14 @@
                   }
                 </article>
               }
+              <app-pagination
+                [totalItems]="queuePager.totalItems()"
+                [pageIndex]="queuePager.safePageIndex()"
+                [pageSize]="queuePager.pageSize()"
+                [pageSizeOptions]="[5, 8, 15, 25]"
+                itemLabel="requests"
+                (pageChange)="queuePager.setPage($event)"
+                (pageSizeChange)="queuePager.setPageSize($event)" />
             }
           </div>
         }

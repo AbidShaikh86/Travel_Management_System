@@ -11,7 +11,9 @@ import { MatSelectModule } from "@angular/material/select";
 import { MatProgressSpinnerModule } from "@angular/material/progress-spinner";
 import { MatRippleModule } from "@angular/material/core";
 import { NotFoundComponent } from "../../../../shared/components/not-found/not-found";
+import { PaginationComponent, createPagination } from "../../../../shared/components/pagination/pagination";
 import { extractApiErrorMessage, isBackendOfflineError } from "../../../../core/utils/http-error.util";
+import { environment } from "../../../../../environments/environment";
 import {
   animateDrawerIn,
   animateInspectorSwap,
@@ -60,6 +62,7 @@ export interface TravelDetailApiResponse {
     RouterLink,
     FormsModule,
     NotFoundComponent,
+    PaginationComponent,
     MatButtonModule,
     MatFormFieldModule,
     MatInputModule,
@@ -86,8 +89,37 @@ export class TravelRequestListComponent implements OnInit, AfterViewInit {
   readonly approvedCount = computed(() => this.requestsSignal().filter((r) => r.status === "APPROVED" || r.status === "COMPLETED").length);
   readonly flaggedCount = computed(() => this.requestsSignal().filter((r) => r.isFlagged).length);
 
-  selectedFilter = "ALL";
-  searchQuery = "";
+  private readonly _selectedFilter = signal("ALL");
+  private readonly _searchQuery = signal("");
+
+  get selectedFilter(): string { return this._selectedFilter(); }
+  set selectedFilter(value: string) {
+    this._selectedFilter.set(value);
+    this.requestsPager.reset();
+  }
+
+  get searchQuery(): string { return this._searchQuery(); }
+  set searchQuery(value: string) {
+    this._searchQuery.set(value);
+    this.requestsPager.reset();
+  }
+
+  readonly filteredRequestsList = computed<TravelDetailItem[]>(() => {
+    const q = this._searchQuery().toLowerCase().trim();
+    const filter = this._selectedFilter();
+    return this.requestsSignal().filter((r) => {
+      const matchesFilter = filter === "ALL" || r.status === filter;
+      const matchesSearch =
+        !q ||
+        r.destination.toLowerCase().includes(q) ||
+        r.purpose.toLowerCase().includes(q) ||
+        String(r.id).includes(q);
+      return matchesFilter && matchesSearch;
+    });
+  });
+
+  readonly requestsPager = createPagination(() => this.filteredRequestsList(), 10);
+
   selectedRequest: TravelDetailItem | null = null;
 
   get loading(): boolean { return this.loadingSignal(); }
@@ -117,7 +149,7 @@ export class TravelRequestListComponent implements OnInit, AfterViewInit {
     this.loadingSignal.set(true);
     this.backendOffline.set(false);
     this.errorSignal.set(null);
-    this.http.get<TravelDetailItem[]>("http://localhost:6969/api/employee/requests").subscribe({
+    this.http.get<TravelDetailItem[]>(`${environment.apiUrl}/employee/requests`).subscribe({
       next: (data) => {
         this.requestsSignal.set(Array.isArray(data) ? data : []);
         this.loadingSignal.set(false);
@@ -145,17 +177,13 @@ export class TravelRequestListComponent implements OnInit, AfterViewInit {
   }
 
   get filteredRequests(): TravelDetailItem[] {
-    const q = this.searchQuery.toLowerCase().trim();
-    const filter = this.selectedFilter;
-    return this.requestsSignal().filter((r) => {
-      const matchesFilter = filter === "ALL" || r.status === filter;
-      const matchesSearch =
-        !q ||
-        r.destination.toLowerCase().includes(q) ||
-        r.purpose.toLowerCase().includes(q) ||
-        String(r.id).includes(q);
-      return matchesFilter && matchesSearch;
-    });
+    return this.filteredRequestsList();
+  }
+
+  resetFilters() {
+    this._selectedFilter.set("ALL");
+    this._searchQuery.set("");
+    this.requestsPager.reset();
   }
 
   viewDetail(item: TravelDetailItem) {
@@ -164,7 +192,7 @@ export class TravelRequestListComponent implements OnInit, AfterViewInit {
     this.selectedDetail.set(null);
     this.detailLoading.set(true);
 
-    this.http.get<TravelDetailApiResponse>(`http://localhost:6969/api/employee/request/${item.id}`).subscribe({
+    this.http.get<TravelDetailApiResponse>(`${environment.apiUrl}/employee/request/${item.id}`).subscribe({
       next: (detail) => {
         this.selectedDetail.set(detail);
         this.detailLoading.set(false);

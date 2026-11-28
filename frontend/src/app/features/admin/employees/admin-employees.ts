@@ -8,8 +8,10 @@ import { MatSelectModule } from "@angular/material/select";
 import { MatProgressSpinnerModule } from "@angular/material/progress-spinner";
 import { ToastService } from "../../../core/service/toast.service";
 import { NotFoundComponent } from "../../../shared/components/not-found/not-found";
+import { PaginationComponent, createPagination } from "../../../shared/components/pagination/pagination";
 import { extractApiErrorMessage, isBackendOfflineError } from "../../../core/utils/http-error.util";
 import { animatePageIn, animateModalIn, animateStagger } from "../../../shared/animations/gsap.animations";
+import { environment } from '../../../../environments/environment';
 
 export type EmployeeRole = "EMPLOYEE" | "MANAGER" | "FINANCE" | "ADMIN";
 
@@ -41,6 +43,7 @@ export interface ManagerDD {
     ReactiveFormsModule,
     FormsModule,
     NotFoundComponent,
+    PaginationComponent,
     MatButtonModule,
     MatFormFieldModule,
     MatInputModule,
@@ -83,8 +86,37 @@ export class AdminEmployeesComponent implements AfterViewInit, OnInit {
     return this.managersSignal();
   }
 
-  searchQuery = "";
-  selectedRole = "ALL";
+  private readonly _searchQuery = signal("");
+  private readonly _selectedRole = signal("ALL");
+
+  get searchQuery(): string { return this._searchQuery(); }
+  set searchQuery(value: string) {
+    this._searchQuery.set(value);
+    this.employeesPager.reset();
+  }
+
+  get selectedRole(): string { return this._selectedRole(); }
+  set selectedRole(value: string) {
+    this._selectedRole.set(value);
+    this.employeesPager.reset();
+  }
+
+  readonly filteredEmployeesList = computed<EmployeeItem[]>(() => {
+    const q = this._searchQuery().toLowerCase().trim();
+    const role = this._selectedRole();
+    return this.employeesSignal().filter((e) => {
+      const matchesRole = role === "ALL" || e.role === role;
+      const matchesSearch =
+        !q ||
+        e.name.toLowerCase().includes(q) ||
+        e.email.toLowerCase().includes(q) ||
+        e.designation.toLowerCase().includes(q);
+      return matchesRole && matchesSearch;
+    });
+  });
+
+  readonly employeesPager = createPagination(() => this.filteredEmployeesList(), 10);
+
   showModal = false;
 
   private _submitting = signal(false);
@@ -117,7 +149,7 @@ export class AdminEmployeesComponent implements AfterViewInit, OnInit {
     this.backendOffline.set(false);
     this.loadError.set(null);
 
-    this.http.get<any[]>("http://localhost:6969/api/admin/employees").subscribe({
+    this.http.get<any[]>(`${environment.apiUrl}/admin/employees`).subscribe({
       next: (data) => {
         this.loadingEmployees.set(false);
         if (Array.isArray(data)) {
@@ -168,7 +200,7 @@ export class AdminEmployeesComponent implements AfterViewInit, OnInit {
   loadDepartments() {
     this.loadingDepartments.set(true);
     this.apiError.set(null);
-    this.http.get<DepartmentDD[]>("http://localhost:6969/api/admin/add-employee/department").subscribe({
+    this.http.get<DepartmentDD[]>(`${environment.apiUrl}/admin/add-employee/department`).subscribe({
       next: (data) => {
         this.loadingDepartments.set(false);
         if (Array.isArray(data)) {
@@ -191,7 +223,7 @@ export class AdminEmployeesComponent implements AfterViewInit, OnInit {
 
   loadManagers() {
     this.loadingManagers.set(true);
-    this.http.get<ManagerDD[]>("http://localhost:6969/api/admin/add-employee/manager").subscribe({
+    this.http.get<ManagerDD[]>(`${environment.apiUrl}/admin/add-employee/manager`).subscribe({
       next: (data) => {
         this.loadingManagers.set(false);
         if (Array.isArray(data)) {
@@ -219,17 +251,7 @@ export class AdminEmployeesComponent implements AfterViewInit, OnInit {
   }
 
   get filteredEmployees(): EmployeeItem[] {
-    const q = this.searchQuery.toLowerCase().trim();
-    const role = this.selectedRole;
-    return this.employeesSignal().filter((e) => {
-      const matchesRole = role === "ALL" || e.role === role;
-      const matchesSearch =
-        !q ||
-        e.name.toLowerCase().includes(q) ||
-        e.email.toLowerCase().includes(q) ||
-        e.designation.toLowerCase().includes(q);
-      return matchesRole && matchesSearch;
-    });
+    return this.filteredEmployeesList();
   }
 
   openModal() {
@@ -303,10 +325,10 @@ export class AdminEmployeesComponent implements AfterViewInit, OnInit {
       }
     };
 
-    this.http.get<any>(`http://localhost:6969/api/admin/employee/${employee.id}`).subscribe({
+    this.http.get<any>(`${environment.apiUrl}/admin/employee/${employee.id}`).subscribe({
       next: (data) => applyData(data),
       error: () => {
-        this.http.get<any>(`http://localhost:6969/api/admin/${employee.id}`).subscribe({
+        this.http.get<any>(`${environment.apiUrl}/admin/${employee.id}`).subscribe({
           next: (data) => applyData(data),
           error: () => {
             this.loadingEmployeeDetails.set(false);
@@ -366,7 +388,7 @@ export class AdminEmployeesComponent implements AfterViewInit, OnInit {
         managerId: rawMgrId ? Number(rawMgrId) : null
       };
 
-      const updateUrl = `http://localhost:6969/api/admin/employee/${empId}/update`;
+      const updateUrl = `${environment.apiUrl}/admin/employee/${empId}/update`;
       this.http.patch<any>(updateUrl, updatePayload).subscribe({
         next: () => {
           this._submitting.set(false);
@@ -375,7 +397,7 @@ export class AdminEmployeesComponent implements AfterViewInit, OnInit {
           this.closeModal();
         },
         error: (err: any) => {
-          this.http.patch<any>(`http://localhost:6969/api/admin/${empId}/update`, updatePayload).subscribe({
+          this.http.patch<any>(`${environment.apiUrl}/admin/${empId}/update`, updatePayload).subscribe({
             next: () => {
               this._submitting.set(false);
               this.toast.success("Employee profile updated.");
@@ -402,7 +424,7 @@ export class AdminEmployeesComponent implements AfterViewInit, OnInit {
         password: rawValues.password
       };
 
-      this.http.post<any>("http://localhost:6969/api/admin/add-employee", payload).subscribe({
+      this.http.post<any>(`${environment.apiUrl}/admin/add-employee`, payload).subscribe({
         next: () => {
           this._submitting.set(false);
           this.toast.success("New employee onboarded.");

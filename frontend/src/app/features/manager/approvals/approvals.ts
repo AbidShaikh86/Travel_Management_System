@@ -33,7 +33,9 @@ import {
 } from "../../../shared/animations/gsap.animations";
 import { ToastService } from "../../../core/service/toast.service";
 import { NotFoundComponent } from "../../../shared/components/not-found/not-found";
+import { PaginationComponent, createPagination } from "../../../shared/components/pagination/pagination";
 import { extractApiErrorMessage, isBackendOfflineError } from "../../../core/utils/http-error.util";
+import { environment } from "../../../../environments/environment";
 
 export interface FlaggedPolicyItem {
   id: number;
@@ -117,6 +119,7 @@ export type ApprovalTab = "PENDING" | "FLAGGED" | "HISTORY";
     ReactiveFormsModule,
     RouterLink,
     NotFoundComponent,
+    PaginationComponent,
     MatButtonModule,
     MatFormFieldModule,
     MatInputModule,
@@ -200,6 +203,9 @@ export class ApprovalsComponent implements OnInit {
     return list;
   });
 
+  readonly queuePager = createPagination(() => this.filteredItems(), 8);
+  readonly historyPager = createPagination(() => this.decidedSignal(), 10);
+
   private hasEntered = false;
 
   ngOnInit() {
@@ -226,7 +232,7 @@ export class ApprovalsComponent implements OnInit {
     this.backendOffline.set(false);
     this.error.set(null);
 
-    this.http.get<any[]>("http://localhost:6969/api/manager/pending").subscribe({
+    this.http.get<any[]>(`${environment.apiUrl}/manager/pending`).subscribe({
       next: (data) => {
         const list = Array.isArray(data) ? data.map((row) => this.normalizePendingItem(row)) : [];
         this.itemsSignal.set(list);
@@ -245,7 +251,7 @@ export class ApprovalsComponent implements OnInit {
   }
 
   fetchApprovalHistory() {
-    this.http.get<any[]>("http://localhost:6969/api/manager/history").subscribe({
+    this.http.get<any[]>(`${environment.apiUrl}/manager/history`).subscribe({
       next: (data) => {
         const list = Array.isArray(data) ? data.map((row) => this.normalizeHistoryItem(row)) : [];
         this.decidedSignal.set(list);
@@ -319,6 +325,10 @@ export class ApprovalsComponent implements OnInit {
     if (this.activeTab() === tab) return;
     this.closeInlineAction();
     this.activeTab.set(tab);
+    this.queuePager.reset();
+    if (tab === "HISTORY") {
+      this.historyPager.reset();
+    }
 
     afterNextRender(() => {
       this.syncTabIndicator(false);
@@ -326,6 +336,11 @@ export class ApprovalsComponent implements OnInit {
       if (panel) animatePageIn(panel);
       this.animatePanelItems();
     }, { injector: this.injector });
+  }
+
+  onSearchInput(value: string) {
+    this.searchQuery.set(value);
+    this.queuePager.reset();
   }
 
   onTabKeydown(event: KeyboardEvent, index: number) {
@@ -388,7 +403,7 @@ export class ApprovalsComponent implements OnInit {
     const travelId = item.travelDetail.id;
     const comment = (this.form.value.comment || "").trim() || (decision === "APPROVED" ? "Approved by manager." : "");
 
-    this.http.patch<any>(`http://localhost:6969/api/manager/${travelId}`, { status: decision, comment }).subscribe({
+    this.http.patch<any>(`${environment.apiUrl}/manager/${travelId}`, { status: decision, comment }).subscribe({
       next: () => {
         this.toast.success(decision === "APPROVED" ? "Travel request approved." : "Travel request declined.");
         this.animateOutAndRecord(item, decision, comment);
@@ -420,7 +435,7 @@ export class ApprovalsComponent implements OnInit {
       }
     }, { injector: this.injector });
 
-    this.http.get<ManagerTravelDetail>(`http://localhost:6969/api/manager/requests/${travelId}`).subscribe({
+    this.http.get<ManagerTravelDetail>(`${environment.apiUrl}/manager/requests/${travelId}`).subscribe({
       next: (detail) => {
         this.selectedDetail.set(detail);
         this.detailLoading.set(false);

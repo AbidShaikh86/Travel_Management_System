@@ -9,8 +9,11 @@ import { MatInputModule } from "@angular/material/input";
 import { MatSelectModule } from "@angular/material/select";
 import { MatProgressSpinnerModule } from "@angular/material/progress-spinner";
 import { ToastService } from "../../../../core/service/toast.service";
+import { environment } from '../../../../../environments/environment';
 import { NotFoundComponent } from "../../../../shared/components/not-found/not-found";
+import { PaginationComponent, createPagination } from "../../../../shared/components/pagination/pagination";
 import { extractApiErrorMessage, isBackendOfflineError } from "../../../../core/utils/http-error.util";
+import { resolveReceiptFileUrl } from "../../../../core/utils/api-url.util";
 import { animatePageIn, animateModalIn, animateStagger } from "../../../../shared/animations/gsap.animations";
 
 export interface ExpenseItem {
@@ -49,6 +52,7 @@ export interface TripSummary {
     RouterLink,
     ReactiveFormsModule,
     NotFoundComponent,
+    PaginationComponent,
     MatButtonModule,
     MatFormFieldModule,
     MatInputModule,
@@ -70,6 +74,7 @@ export class ReimbursementDetailComponent implements AfterViewInit {
   readonly backendOffline = signal(false);
   readonly errorSignal = signal("");
   readonly itemSignal = signal<ReimbursementDetailData | null>(null);
+  readonly expensesPager = createPagination(() => this.itemSignal()?.expenses ?? [], 5);
   readonly tripSummary = signal<TripSummary | null>(null);
   get loading(): boolean { return this.loadingSignal(); }
   get error(): string { return this.errorSignal(); }
@@ -108,7 +113,7 @@ export class ReimbursementDetailComponent implements AfterViewInit {
     this.loadingSignal.set(true);
     this.backendOffline.set(false);
     this.errorSignal.set("");
-    this.http.get<ReimbursementDetailData>(`http://localhost:6969/api/employee/reimbursement/${this.id}`).subscribe({
+    this.http.get<ReimbursementDetailData>(`${environment.apiUrl}/employee/reimbursement/${this.id}`).subscribe({
       next: (data) => {
         this.itemSignal.set(data);
         this.loadingSignal.set(false);
@@ -136,7 +141,7 @@ export class ReimbursementDetailComponent implements AfterViewInit {
     }
 
     this.http
-      .get<TripSummary>(`http://localhost:6969/api/employee/request/${travelId}`)
+      .get<TripSummary>(`${environment.apiUrl}/employee/request/${travelId}`)
       .pipe(catchError(() => of(null)))
       .subscribe((trip) => {
         if (trip) {
@@ -187,12 +192,12 @@ export class ReimbursementDetailComponent implements AfterViewInit {
     formData.append("amount", String(this.expenseForm.value.amount || 0));
     formData.append("file", this.selectedFile);
 
-    this.http.post<any>(`http://localhost:6969/api/employee/reimbursement/${this.id}/add-expense`, formData).subscribe({
+    this.http.post<any>(`${environment.apiUrl}/employee/reimbursement/${this.id}/add-expense`, formData).subscribe({
       next: () => {
         this._uploadLoading.set(false);
         this.showModal = false;
         this.toast.success("Expense receipt attached.");
-        this.http.get<ReimbursementDetailData>(`http://localhost:6969/api/employee/reimbursement/${this.id}`).subscribe({
+        this.http.get<ReimbursementDetailData>(`${environment.apiUrl}/employee/reimbursement/${this.id}`).subscribe({
           next: (data) => {
             this.itemSignal.set(data);
             this.animateContent();
@@ -208,7 +213,7 @@ export class ReimbursementDetailComponent implements AfterViewInit {
 
   submitClaim() {
     this._submitting.set(true);
-    this.http.patch<any>(`http://localhost:6969/api/employee/reimbursement/${this.id}/submit`, {}).subscribe({
+    this.http.patch<any>(`${environment.apiUrl}/employee/reimbursement/${this.id}/submit`, {}).subscribe({
       next: () => {
         this._submitting.set(false);
         this.itemSignal.update((cur) => (cur ? { ...cur, status: "PENDING" } : cur));
@@ -263,11 +268,7 @@ export class ReimbursementDetailComponent implements AfterViewInit {
   fileUrl(expenseId: number, fileName?: string | null, proofUrl?: string | null): string {
     const source = proofUrl || fileName;
     if (!source) return "";
-    const trimmed = source.trim();
-    if (/^https?:\/\//i.test(trimmed)) return trimmed;
-    if (trimmed.startsWith("/api/files/")) return `http://localhost:6969${trimmed}`;
-    if (trimmed.startsWith("api/files/")) return `http://localhost:6969/${trimmed}`;
-    return `http://localhost:6969/api/files/${this.item?.id || this.id}/${trimmed.replace(/^\/+/, "")}`;
+    return resolveReceiptFileUrl(this.item?.id || this.id, source);
   }
 
   openReceipt(expense: ExpenseItem) {
